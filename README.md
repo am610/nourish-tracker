@@ -2,6 +2,9 @@
 
 A mobile-first web app tailored for your **75 kg body recomposition plan** (building muscle while shedding abdominal fat).
 
+🌐 **Live URL:** [https://am610.github.io/nourish-tracker/](https://am610.github.io/nourish-tracker/)  
+📦 **Repository:** [https://github.com/am610/nourish-tracker](https://github.com/am610/nourish-tracker)
+
 ---
 
 ## 🎯 Your Daily Nutrition Targets
