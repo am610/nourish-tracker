@@ -1,17 +1,17 @@
-/* Nourish - Custom Styling & Glassmorphism */
+/* Nourish - Clean White Modern Theme */
 :root {
-  --bg-primary: #0b0f17;
-  --bg-secondary: #131a26;
-  --bg-card: #182232;
-  --bg-card-hover: #1f2c40;
-  --accent-green: #10b981;
-  --accent-blue: #3b82f6;
-  --accent-amber: #f59e0b;
-  --accent-purple: #8b5cf6;
-  --accent-rose: #f43f5e;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-color: rgba(255, 255, 255, 0.08);
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --accent-green: #059669;
+  --accent-blue: #2563eb;
+  --accent-amber: #d97706;
+  --accent-purple: #7c3aed;
+  --accent-rose: #e11d48;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
 }
 
 body {
@@ -23,24 +23,23 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 80px);
 }
 
-/* Glass Card */
+/* Crisp Clean White Card */
 .glass-panel {
-  background: rgba(24, 34, 50, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
 }
 
 .glass-panel-accent {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%);
   border: 1px solid rgba(16, 185, 129, 0.25);
   border-radius: 1rem;
 }
 
 /* Progress ring / bar styling */
 .macro-progress-bg {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: #e2e8f0;
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -52,8 +51,9 @@ body {
 
 /* Tab active styling */
 .nav-tab.active {
-  color: #10b981;
-  border-color: #10b981;
+  color: #059669;
+  border-color: #059669;
+  font-weight: 600;
 }
 
 /* Bottom Nav bar on Mobile */
@@ -62,10 +62,11 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-color);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
   z-index: 40;
 }
 
@@ -109,17 +110,17 @@ body {
   border-radius: 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
-  color: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .portion-pill:hover, .portion-pill.active {
-  background: #10b981;
+  background: #059669;
   color: #ffffff;
-  border-color: #10b981;
+  border-color: #059669;
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 
@@ -134,23 +135,23 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: #94a3b8;
 }
 
 /* Input elements */
 input, select, textarea {
-  background-color: rgba(15, 23, 42, 0.75) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #10b981 !important;
+  border-color: #059669 !important;
   outline: none !important;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
 }

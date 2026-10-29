@@ -2180,19 +2180,19 @@ class NourishApp {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#94a3b8', font: { size: 11 } } }
+            legend: { labels: { color: '#334155', font: { size: 11, weight: '600' } } }
           },
           scales: {
             x: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#94a3b8' }
+              grid: { color: 'rgba(0, 0, 0, 0.05)' },
+              ticks: { color: '#475569', font: { weight: '600' } }
             },
             y: {
               type: 'linear',
               display: true,
               position: 'left',
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#94a3b8' },
+              grid: { color: 'rgba(0, 0, 0, 0.05)' },
+              ticks: { color: '#475569', font: { weight: '600' } },
               suggestedMax: 2200
             },
             y1: {
@@ -2200,7 +2200,7 @@ class NourishApp {
               display: true,
               position: 'right',
               grid: { drawOnChartArea: false },
-              ticks: { color: '#10b981' },
+              ticks: { color: '#059669', font: { weight: '600' } },
               suggestedMax: 180
             }
           }
@@ -2239,16 +2239,16 @@ class NourishApp {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#94a3b8' } }
+            legend: { labels: { color: '#334155', font: { weight: '600' } } }
           },
           scales: {
             x: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#94a3b8' }
+              grid: { color: 'rgba(0, 0, 0, 0.05)' },
+              ticks: { color: '#475569', font: { weight: '600' } }
             },
             y: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#94a3b8' },
+              grid: { color: 'rgba(0, 0, 0, 0.05)' },
+              ticks: { color: '#475569', font: { weight: '600' } },
               suggestedMin: 30,
               suggestedMax: 36
             }
