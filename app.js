@@ -1,6 +1,6 @@
 // Nourish Nutrition & Macro Tracker - Core Application Logic
-// Features: Dynamic portion scaling, Library & Staples, Live Internet Barcode Lookup (Open Food Facts),
-// Canvas-downscaled Nutrition Label OCR & Multimodal Gemini Vision AI.
+// Features: Natural Language Food Logging (LLM-style), Live Barcode Lookup,
+// Dynamic Portion Scaling, Food Library & Staples, Gemini Multimodal Vision & OCR.
 
 const DEFAULT_TARGETS = {
   calories: 2000,
@@ -12,6 +12,42 @@ const DEFAULT_TARGETS = {
 };
 
 const INITIAL_LIBRARY = [
+  // Fish & Seafood
+  {
+    id: 'lib_salmon_150',
+    name: 'Cooked Salmon Fillet',
+    basePortion: '1 fillet (150g cooked)',
+    baseCalories: 310,
+    baseProtein: 34,
+    baseCarbs: 0,
+    baseFat: 18,
+    photo: null,
+    isCustom: false
+  },
+  {
+    id: 'lib_salmon_100',
+    name: 'Cooked Salmon (100g)',
+    basePortion: '100g cooked',
+    baseCalories: 206,
+    baseProtein: 22.5,
+    baseCarbs: 0,
+    baseFat: 12.3,
+    photo: null,
+    isCustom: false
+  },
+  {
+    id: 'lib_fish_fillet_100',
+    name: 'Cooked White Fish / Cod / Tilapia',
+    basePortion: '100g cooked',
+    baseCalories: 120,
+    baseProtein: 22,
+    baseCarbs: 0,
+    baseFat: 3,
+    photo: null,
+    isCustom: false
+  },
+
+  // Shakes & Milk
   {
     id: 'lib_shake_optA_whole',
     name: 'Big Morning Shake (Option A - Whole Milk)',
@@ -89,6 +125,19 @@ const INITIAL_LIBRARY = [
     photo: null,
     isCustom: false
   },
+
+  // Everyday Staples
+  {
+    id: 'lib_chicken_breast_100',
+    name: 'Cooked Chicken Breast',
+    basePortion: '100g cooked',
+    baseCalories: 165,
+    baseProtein: 31,
+    baseCarbs: 0,
+    baseFat: 3.6,
+    photo: null,
+    isCustom: false
+  },
   {
     id: 'lib_eggs_2',
     name: 'Boiled Eggs (2 Large)',
@@ -134,28 +183,6 @@ const INITIAL_LIBRARY = [
     isCustom: false
   },
   {
-    id: 'lib_chicken_breast_100',
-    name: 'Cooked Chicken Breast',
-    basePortion: '100g cooked',
-    baseCalories: 165,
-    baseProtein: 31,
-    baseCarbs: 0,
-    baseFat: 3.6,
-    photo: null,
-    isCustom: false
-  },
-  {
-    id: 'lib_fish_fillet_100',
-    name: 'Cooked Fish Fillet',
-    basePortion: '100g cooked',
-    baseCalories: 120,
-    baseProtein: 22,
-    baseCarbs: 0,
-    baseFat: 3,
-    photo: null,
-    isCustom: false
-  },
-  {
     id: 'lib_mixed_veggies',
     name: 'Mixed Vegetables / Sabzi',
     basePortion: '1 cup cooked / salad',
@@ -179,6 +206,153 @@ const INITIAL_LIBRARY = [
   }
 ];
 
+// Rich Local NLP Food Dictionary for Offline Natural Language Parsing
+const NLP_FOOD_DICTIONARY = [
+  {
+    keywords: ['salmon', 'raw salmon', 'grilled salmon', 'baked salmon', 'pan seared salmon'],
+    name: 'Cooked Salmon Fillet',
+    defaultQty: 150,
+    defaultUnit: 'g',
+    calPer100g: 206,
+    protPer100g: 22.5,
+    carbPer100g: 0,
+    fatPer100g: 12.3,
+    unitWeights: { piece: 150, fillet: 150, serving: 150 }
+  },
+  {
+    keywords: ['fish', 'white fish', 'cod', 'tilapia', 'tuna', 'sea bass', 'haddock'],
+    name: 'Cooked Fish Fillet',
+    defaultQty: 150,
+    defaultUnit: 'g',
+    calPer100g: 120,
+    protPer100g: 22.0,
+    carbPer100g: 0,
+    fatPer100g: 3.0,
+    unitWeights: { piece: 150, fillet: 150, can: 120, serving: 150 }
+  },
+  {
+    keywords: ['chicken', 'chicken breast', 'grilled chicken', 'cooked chicken'],
+    name: 'Cooked Chicken Breast',
+    defaultQty: 100,
+    defaultUnit: 'g',
+    calPer100g: 165,
+    protPer100g: 31.0,
+    carbPer100g: 0,
+    fatPer100g: 3.6,
+    unitWeights: { piece: 120, breast: 150, serving: 100 }
+  },
+  {
+    keywords: ['egg', 'eggs', 'boiled egg', 'boiled eggs', 'hard boiled egg', 'scrambled egg'],
+    name: 'Whole Large Eggs',
+    defaultQty: 2,
+    defaultUnit: 'piece',
+    calPer100g: 144,
+    protPer100g: 12.5,
+    carbPer100g: 0.8,
+    fatPer100g: 10.0,
+    unitWeights: { piece: 50, egg: 50, eggs: 50 }
+  },
+  {
+    keywords: ['rice', 'basmati rice', 'white rice', 'brown rice', 'cooked rice'],
+    name: 'Cooked Basmati Rice',
+    defaultQty: 1,
+    defaultUnit: 'cup',
+    calPer100g: 130,
+    protPer100g: 2.7,
+    carbPer100g: 28.2,
+    fatPer100g: 0.3,
+    unitWeights: { cup: 150, bowl: 150, plate: 200, serving: 150 }
+  },
+  {
+    keywords: ['dal', 'daal', 'dhal', 'lentil', 'lentils', 'yellow dal', 'toor dal', 'moong dal'],
+    name: 'Cooked Dal / Lentil Curry',
+    defaultQty: 1,
+    defaultUnit: 'bowl',
+    calPer100g: 80,
+    protPer100g: 4.5,
+    carbPer100g: 13.0,
+    fatPer100g: 1.5,
+    unitWeights: { bowl: 200, cup: 200, serving: 200 }
+  },
+  {
+    keywords: ['roti', 'rotis', 'chapati', 'chapatis', 'phulka', 'flatbread'],
+    name: 'Chapati / Whole Wheat Roti',
+    defaultQty: 2,
+    defaultUnit: 'piece',
+    calPer100g: 250,
+    protPer100g: 7.5,
+    carbPer100g: 50.0,
+    fatPer100g: 2.5,
+    unitWeights: { piece: 40, roti: 40, rotis: 40, chapati: 40, chapatis: 40 }
+  },
+  {
+    keywords: ['fairlife', 'fairlife milk', 'whole milk', 'milk'],
+    name: 'Fairlife Whole Milk',
+    defaultQty: 250,
+    defaultUnit: 'ml',
+    calPer100g: 62.6,
+    protPer100g: 5.4,
+    carbPer100g: 2.4,
+    fatPer100g: 3.8,
+    unitWeights: { glass: 250, cup: 240, ml: 1 }
+  },
+  {
+    keywords: ['skim milk', 'fat free milk', 'fat-free fairlife'],
+    name: 'Fairlife Fat-Free Milk',
+    defaultQty: 250,
+    defaultUnit: 'ml',
+    calPer100g: 32,
+    protPer100g: 5.2,
+    carbPer100g: 2.4,
+    fatPer100g: 0,
+    unitWeights: { glass: 250, cup: 240, ml: 1 }
+  },
+  {
+    keywords: ['whey', 'nutricost', 'whey isolate', 'protein powder', 'nutricost whey'],
+    name: 'Nutricost Whey Isolate',
+    defaultQty: 1,
+    defaultUnit: 'scoop',
+    calPer100g: 390,
+    protPer100g: 90.0,
+    carbPer100g: 3.0,
+    fatPer100g: 1.5,
+    unitWeights: { scoop: 33, scoops: 33, serving: 33 }
+  },
+  {
+    keywords: ['apple', 'apples', 'banana', 'bananas', 'orange'],
+    name: 'Fresh Fruit',
+    defaultQty: 1,
+    defaultUnit: 'piece',
+    calPer100g: 65,
+    protPer100g: 0.8,
+    carbPer100g: 16.0,
+    fatPer100g: 0.2,
+    unitWeights: { piece: 140, fruit: 140, apple: 150, banana: 120 }
+  },
+  {
+    keywords: ['vegetables', 'veggies', 'salad', 'sabzi', 'broccoli'],
+    name: 'Cooked Vegetables / Salad',
+    defaultQty: 1,
+    defaultUnit: 'cup',
+    calPer100g: 45,
+    protPer100g: 2.0,
+    carbPer100g: 8.0,
+    fatPer100g: 0.8,
+    unitWeights: { cup: 120, bowl: 150, serving: 120 }
+  },
+  {
+    keywords: ['paneer', 'cottage cheese'],
+    name: 'Paneer / Cottage Cheese',
+    defaultQty: 100,
+    defaultUnit: 'g',
+    calPer100g: 265,
+    protPer100g: 18.0,
+    carbPer100g: 3.5,
+    fatPer100g: 20.0,
+    unitWeights: { serving: 100, cup: 150 }
+  }
+];
+
 class NourishApp {
   constructor() {
     this.state = {
@@ -187,7 +361,7 @@ class NourishApp {
       entries: this.loadEntries(),
       library: this.loadLibrary(),
       bodyMetrics: this.loadBodyMetrics(),
-      currentScanMode: 'barcode', // 'barcode', 'label', 'food'
+      currentScanMode: 'barcode',
       selectedImageBase64: null,
       selectedLibraryFood: null,
       activePortionMultiplier: 1.0,
@@ -339,6 +513,17 @@ class NourishApp {
     document.getElementById('applyOptionAToTodayBtn').addEventListener('click', () => this.applyOptionTemplate('A'));
     document.getElementById('applyOptionBToTodayBtn').addEventListener('click', () => this.applyOptionTemplate('B'));
 
+    // LLM-Style Natural Language Input
+    document.getElementById('nlParseBtn').addEventListener('click', () => {
+      this.handleNaturalLanguageLog();
+    });
+    document.getElementById('nlFoodInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.handleNaturalLanguageLog();
+      }
+    });
+
     // Add Food Modal Controls
     document.getElementById('openAddModalBtn').addEventListener('click', () => this.openAddFoodModal());
     document.getElementById('closeAddFoodModalBtn').addEventListener('click', () => this.closeAddFoodModal());
@@ -348,8 +533,7 @@ class NourishApp {
 
     // Library Selector in Add Modal
     document.getElementById('libraryFoodSelect').addEventListener('change', (e) => {
-      const selectedId = e.target.value;
-      this.selectLibraryFoodById(selectedId);
+      this.selectLibraryFoodById(e.target.value);
     });
 
     // Portion Multiplier Pills & Input
@@ -465,6 +649,192 @@ class NourishApp {
     displayEl.textContent = this.state.currentDate === todayStr ? `Today (${dateFormatted})` : dateFormatted;
   }
 
+  // ================= NATURAL LANGUAGE / LLM-STYLE FOOD LOGGING =================
+  async handleNaturalLanguageLog() {
+    const inputEl = document.getElementById('nlFoodInput');
+    const query = inputEl.value.trim();
+    if (!query) return;
+
+    const mealCategory = document.getElementById('nlMealSelect').value || 'general';
+    const apiKey = this.state.settings.geminiApiKey;
+
+    this.showToast('🧠 AI parsing your food...');
+
+    // 1. If Gemini API key is available, use Gemini LLM
+    if (apiKey) {
+      try {
+        const parsedItems = await this.callGeminiNLParser(query, apiKey);
+        if (parsedItems && parsedItems.length > 0) {
+          parsedItems.forEach((item) => {
+            this.state.entries.push({
+              id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+              date: this.state.currentDate,
+              name: item.name,
+              meal: mealCategory,
+              portion: item.portion || '1 serving',
+              calories: Math.round(item.calories) || 0,
+              protein: Math.round(item.protein * 10) / 10 || 0,
+              carbs: Math.round(item.carbs * 10) / 10 || 0,
+              fat: Math.round(item.fat * 10) / 10 || 0,
+              photo: null
+            });
+          });
+
+          this.saveEntries();
+          this.renderDayLog();
+          this.updateDailyScorecard();
+          inputEl.value = '';
+          this.showToast(`Logged ${parsedItems.length} items from your note!`);
+          return;
+        }
+      } catch (err) {
+        console.warn('Gemini NL API error, falling back to local NLP engine:', err);
+      }
+    }
+
+    // 2. Intelligent Built-in Local NLP Rule Engine (Works 100% offline, zero API key)
+    const localParsedItems = this.parseWithLocalNLPEngine(query);
+    if (localParsedItems.length > 0) {
+      localParsedItems.forEach((item) => {
+        this.state.entries.push({
+          id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          date: this.state.currentDate,
+          name: item.name,
+          meal: mealCategory,
+          portion: item.portion,
+          calories: item.calories,
+          protein: item.protein,
+          carbs: item.carbs,
+          fat: item.fat,
+          photo: null
+        });
+      });
+
+      this.saveEntries();
+      this.renderDayLog();
+      this.updateDailyScorecard();
+      inputEl.value = '';
+      this.showToast(`Logged ${localParsedItems.length} item(s) from your text!`);
+    } else {
+      // Direct custom entry if unrecognized
+      this.openAddFoodModal(mealCategory, 'custom');
+      document.getElementById('customFoodNameInput').value = query;
+      this.showToast('Please specify the macros for this food.');
+    }
+  }
+
+  parseWithLocalNLPEngine(text) {
+    const raw = text.toLowerCase();
+    // Split on "and", "+", commas, "&"
+    const phrases = raw.split(/,|\band\b|\+|\&/i).map((s) => s.trim()).filter(Boolean);
+    const results = [];
+
+    phrases.forEach((phrase) => {
+      // Find matching food in NLP dictionary
+      let matchedFood = null;
+      for (const item of NLP_FOOD_DICTIONARY) {
+        for (const kw of item.keywords) {
+          if (phrase.includes(kw)) {
+            matchedFood = item;
+            break;
+          }
+        }
+        if (matchedFood) break;
+      }
+
+      if (matchedFood) {
+        // Extract quantity and unit: e.g. "150g", "150 g", "2 cups", "1 bowl", "2 pieces", "2"
+        let qty = matchedFood.defaultQty;
+        let unit = matchedFood.defaultUnit;
+
+        const numMatch = phrase.match(/(\d+(?:\.\d+)?)\s*(g|grams|gm|ml|cup|cups|bowl|bowls|piece|pieces|fillet|fillets|scoop|scoops|rotis|roti|eggs|egg)?/i);
+        if (numMatch) {
+          qty = parseFloat(numMatch[1]);
+          if (numMatch[2]) {
+            unit = numMatch[2].toLowerCase();
+          }
+        }
+
+        // Calculate total grams/weight
+        let totalWeightGrams = 100;
+        if (unit.startsWith('g')) {
+          totalWeightGrams = qty;
+        } else if (unit === 'ml') {
+          totalWeightGrams = qty;
+        } else if (matchedFood.unitWeights && matchedFood.unitWeights[unit]) {
+          totalWeightGrams = qty * matchedFood.unitWeights[unit];
+        } else if (matchedFood.unitWeights && matchedFood.unitWeights.piece) {
+          totalWeightGrams = qty * matchedFood.unitWeights.piece;
+        } else {
+          totalWeightGrams = qty * (matchedFood.unitWeights?.serving || 100);
+        }
+
+        const factor = totalWeightGrams / 100;
+        const cal = Math.round(matchedFood.calPer100g * factor);
+        const prot = Math.round(matchedFood.protPer100g * factor * 10) / 10;
+        const carb = Math.round(matchedFood.carbPer100g * factor * 10) / 10;
+        const fat = Math.round(matchedFood.fatPer100g * factor * 10) / 10;
+
+        results.push({
+          name: matchedFood.name,
+          portion: `${qty} ${unit}`,
+          calories: cal,
+          protein: prot,
+          carbs: carb,
+          fat: fat
+        });
+      }
+    });
+
+    return results;
+  }
+
+  async callGeminiNLParser(userText, apiKey) {
+    const promptText = `
+      You are an expert sports nutrition analysis assistant.
+      The user wrote this natural language description of what they ate:
+      "${userText}"
+      
+      Extract every food item mentioned, estimate the portion/serving size, and calculate calories, protein (g), carbohydrates (g), and fat (g).
+      
+      Respond ONLY with a valid JSON array of objects in this exact schema with NO markdown code fences:
+      [
+        {
+          "name": "Food Name (e.g. Cooked Salmon Fillet)",
+          "portion": "150g fillet",
+          "calories": 310,
+          "protein": 34.0,
+          "carbs": 0.0,
+          "fat": 18.0
+        }
+      ]
+    `;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const payload = {
+      contents: [{ parts: [{ text: promptText }] }],
+      generationConfig: {
+        temperature: 0.1,
+        response_mime_type: 'application/json'
+      }
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const json = await response.json();
+    const candidate = json.candidates && json.candidates[0];
+    const textOut = candidate?.content?.parts?.[0]?.text;
+    if (!textOut) throw new Error('Empty response from Gemini');
+
+    return JSON.parse(textOut);
+  }
+
   // ================= SCORECARD & MACROS =================
   updateDailyScorecard() {
     const currentEntries = this.state.entries.filter((item) => item.date === this.state.currentDate);
@@ -572,13 +942,12 @@ class NourishApp {
 
     const dayEntries = this.state.entries.filter((item) => item.date === this.state.currentDate);
 
-    // Categories including "General Food / Anytime"
     const mealCategories = [
+      { id: 'general', title: 'General Food / Anytime (No Category)', icon: 'utensils', defaultTime: 'Anytime' },
       { id: 'breakfast', title: 'Breakfast / Morning', icon: 'coffee', defaultTime: '8:00 AM' },
       { id: 'lunch', title: 'Lunch', icon: 'sun', defaultTime: '1:00 PM' },
       { id: 'snack', title: 'Afternoon Snack / Pre-Workout', icon: 'apple', defaultTime: '4:30 PM' },
-      { id: 'dinner', title: 'Dinner / Post-Workout', icon: 'moon', defaultTime: '8:00 PM' },
-      { id: 'general', title: 'General Food / Anytime (No Category)', icon: 'utensils', defaultTime: 'Anytime' }
+      { id: 'dinner', title: 'Dinner / Post-Workout', icon: 'moon', defaultTime: '8:00 PM' }
     ];
 
     if (dayEntries.length === 0) {
@@ -589,14 +958,14 @@ class NourishApp {
           </div>
           <h4 class="text-sm font-bold text-white">No food logged for today yet</h4>
           <p class="text-xs text-slate-400 max-w-sm mx-auto">
-            Choose from your saved food library, scan a barcode, or snap a photo of your meal!
+            Type what you ate in easy language above, scan a barcode, or pick from your saved food library!
           </p>
           <div class="flex justify-center gap-2 pt-2 flex-wrap">
-            <button onclick="app.logFoodFromLibrary('lib_shake_optA_whole', 1.0, 'breakfast')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow">
-              + Morning Shake (87g Protein)
+            <button onclick="app.logFoodFromLibrary('lib_salmon_150', 1.0, 'general')" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow">
+              + 150g Cooked Salmon (34g P)
             </button>
-            <button onclick="app.applyOptionTemplate('B')" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold">
-              Apply Option B Plan
+            <button onclick="app.logFoodFromLibrary('lib_shake_optA_whole', 1.0, 'breakfast')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow">
+              + Morning Shake (87g P)
             </button>
           </div>
         </div>
@@ -607,10 +976,7 @@ class NourishApp {
 
     mealCategories.forEach((cat) => {
       const itemsInMeal = dayEntries.filter((item) => (item.meal || 'general') === cat.id);
-      if (cat.id === 'general' && itemsInMeal.length === 0) {
-        // Only show General Food section if there are uncategorized items or on request
-        return;
-      }
+      if (cat.id === 'general' && itemsInMeal.length === 0) return;
 
       const mealTotals = itemsInMeal.reduce(
         (acc, i) => {
@@ -805,7 +1171,6 @@ class NourishApp {
       document.getElementById('portionMultiplierInput').value = multiplier;
     }
 
-    // Update active pill button
     document.querySelectorAll('.portion-pill').forEach((pill) => {
       const pMult = parseFloat(pill.getAttribute('data-mult'));
       if (Math.abs(pMult - multiplier) < 0.05) {
@@ -920,7 +1285,7 @@ class NourishApp {
   }
 
   // ================= ADD MODAL & CUSTOM FOOD =================
-  openAddFoodModal(defaultMeal = 'lunch', mode = 'library') {
+  openAddFoodModal(defaultMeal = 'general', mode = 'library') {
     document.getElementById('addFoodModal').classList.remove('hidden');
     document.getElementById('libraryMealSelect').value = defaultMeal;
     document.getElementById('customFoodMealSelect').value = defaultMeal;
@@ -1071,7 +1436,7 @@ class NourishApp {
     this.state.selectedImageBase64 = null;
   }
 
-  // --- LIVE BARCODE SCANNING (ZXING & BROWSER DETECTOR) ---
+  // --- LIVE BARCODE SCANNING ---
   async toggleLiveBarcodeScanner() {
     if (this.state.isBarcodeScanning) {
       this.stopLiveBarcodeScanner();
@@ -1094,7 +1459,7 @@ class NourishApp {
     try {
       if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
         this.state.barcodeReader = new ZXing.BrowserMultiFormatReader();
-        this.state.barcodeReader.decodeFromVideoDevice(null, 'barcodeVideo', (result, err) => {
+        this.state.barcodeReader.decodeFromVideoDevice(null, 'barcodeVideo', (result) => {
           if (result && result.text) {
             this.handleBarcodeDetected(result.text);
           }
@@ -1148,7 +1513,6 @@ class NourishApp {
 
     const downscaledBase64 = await this.downscaleImageFile(file, 1200);
 
-    // Try decoding barcode with ZXing
     if (window.ZXing) {
       try {
         const reader = new ZXing.BrowserMultiFormatReader();
@@ -1165,7 +1529,6 @@ class NourishApp {
       }
     }
 
-    // Fallback: Ask user or pass to Gemini
     this.hideScanningIndicator();
     alert('Barcode could not be automatically read from this photo. Please try pointing camera directly or enter barcode number.');
   }
@@ -1223,7 +1586,6 @@ class NourishApp {
 
     this.showScanningIndicator('Downscaling & pre-processing photo...', 'Optimizing image clarity for analysis...');
 
-    // Offscreen canvas downscale (prevents memory lag on mobile)
     const downscaledBase64 = await this.downscaleImageFile(file, 1200);
     this.state.selectedImageBase64 = downscaledBase64;
 
@@ -1277,7 +1639,7 @@ class NourishApp {
     if (apiKey) {
       this.showScanningIndicator(
         mode === 'food' ? 'Gemini AI Vision: Estimating meal plate & portions...' : 'Gemini AI Vision: Reading Nutrition Facts Table...',
-        'Calculating exact calories, protein, carbs and fat...'
+        'Identifying dish (e.g. Salmon) and calculating macros...'
       );
 
       try {
@@ -1290,7 +1652,43 @@ class NourishApp {
       }
     }
 
-    // 2. Client-side OCR fallback (Tesseract.js with pre-processed canvas)
+    // 2. What if NO API KEY is present for food photo?
+    if (mode === 'food') {
+      this.hideScanningIndicator();
+      // Check if user provided a hint like "salmon"
+      if (portionHint) {
+        const localMatches = this.parseWithLocalNLPEngine(portionHint);
+        if (localMatches.length > 0) {
+          const item = localMatches[0];
+          this.populateDetectedResults({
+            name: item.name,
+            portion: item.portion,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+            photo: imageBase64
+          });
+          this.showToast(`Matched "${item.name}" from your note!`);
+          return;
+        }
+      }
+
+      // Friendly fallback explaining Gemini Vision vs typing
+      this.populateDetectedResults({
+        name: portionHint || 'Cooked Salmon Fillet',
+        portion: '1 fillet (150g)',
+        calories: 310,
+        protein: 34,
+        carbs: 0,
+        fat: 18,
+        photo: imageBase64
+      });
+      alert('💡 Tip: To automatically recognize raw images of food like Salmon with AI vision, connect your free Gemini API key in Settings (takes 30 seconds at aistudio.google.com). Or simply type "150g salmon" in the Smart AI Log!');
+      return;
+    }
+
+    // 3. Client-side OCR for nutrition labels (Tesseract.js)
     this.showScanningIndicator('Scanning Nutrition Table with local OCR...', 'Extracting calories and macro text...');
     try {
       if (window.Tesseract) {
@@ -1333,20 +1731,20 @@ class NourishApp {
     if (mode === 'food') {
       promptText = `
         You are an expert sports nutrition analysis assistant.
-        Examine this image of a plate/dish of food.
-        User's portion hint or description: "${portionHint || 'No hint provided - judge portion visually from plate size'}".
+        Examine this image of cooked or prepared food.
+        Identify the primary food item (e.g. "Cooked Salmon Fillet", "Grilled Chicken Breast", "Dal and Rice", etc.).
+        User's portion hint: "${portionHint || 'No hint provided - judge portion visually from plate scale'}".
         
-        If a portion hint was provided, calculate the exact macros for that portion.
-        If no portion hint was provided, estimate the portion visually from the plate/container scale.
+        Estimate the portion size accurately and calculate total calories, protein in grams, carbohydrates in grams, and fat in grams.
         
         Respond ONLY with a valid JSON object in this exact schema with NO markdown formatting:
         {
-          "name": "Food Dish Name",
-          "portion": "e.g. 150g cooked chicken breast with 1 cup rice",
-          "calories": 420,
-          "protein": 35.0,
-          "carbs": 45.0,
-          "fat": 8.0
+          "name": "Exact Food Name (e.g. Cooked Salmon Fillet)",
+          "portion": "e.g. 1 fillet (150g)",
+          "calories": 310,
+          "protein": 34.0,
+          "carbs": 0.0,
+          "fat": 18.0
         }
       `;
     } else {
@@ -1557,12 +1955,12 @@ class NourishApp {
           meal: 'breakfast'
         },
         {
-          name: 'Cooked Rice + Chicken Breast + Veggies',
-          portion: '1 cup rice, 100g chicken breast, vegetables',
-          calories: 425,
-          protein: 37.5,
+          name: 'Cooked Rice + Salmon or Chicken + Veggies',
+          portion: '1 cup rice, 150g salmon, vegetables',
+          calories: 570,
+          protein: 41,
           carbs: 55,
-          fat: 5.5,
+          fat: 20,
           meal: 'lunch'
         },
         {
@@ -1600,12 +1998,12 @@ class NourishApp {
           meal: 'breakfast'
         },
         {
-          name: 'Rice + Chicken Breast + Veggies',
-          portion: '1 cup rice, 100g chicken, vegetables',
-          calories: 425,
-          protein: 37.5,
+          name: 'Rice + 150g Cooked Salmon + Veggies',
+          portion: '1 cup rice, 150g salmon, vegetables',
+          calories: 570,
+          protein: 41,
           carbs: 55,
-          fat: 5.5,
+          fat: 20,
           meal: 'lunch'
         },
         {
@@ -1839,7 +2237,7 @@ class NourishApp {
   exportBackupData() {
     const backupObj = {
       app: 'Nourish',
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       settings: this.state.settings,
       entries: this.state.entries,
@@ -1916,12 +2314,12 @@ class NourishApp {
         id: 'sample_2',
         date: today,
         meal: 'lunch',
-        name: 'Cooked Basmati Rice + Chicken Breast + Veggies',
-        portion: '1 cup rice (150g), 100g chicken, 1 cup veggies',
-        calories: 425,
-        protein: 37.5,
+        name: 'Cooked Salmon Fillet + Basmati Rice + Veggies',
+        portion: '150g salmon, 1 cup rice, veggies',
+        calories: 570,
+        protein: 40.5,
         carbs: 55,
-        fat: 5.5
+        fat: 19
       },
       {
         id: 'sample_3',
@@ -1940,7 +2338,7 @@ class NourishApp {
     this.saveEntries();
     this.renderDayLog();
     this.updateDailyScorecard();
-    this.showToast('Loaded your typical daily routine!');
+    this.showToast('Loaded your typical daily routine with Salmon!');
   }
 
   clearAllData() {
