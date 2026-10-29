@@ -1,182 +1,181 @@
 // Nourish Nutrition & Macro Tracker - Core Application Logic
+// Features: Dynamic portion scaling, Library & Staples, Live Internet Barcode Lookup (Open Food Facts),
+// Canvas-downscaled Nutrition Label OCR & Multimodal Gemini Vision AI.
 
-// ================= INITIAL STATE & DATA STORAGE =================
 const DEFAULT_TARGETS = {
   calories: 2000,
   protein: 150,
   carbs: 204,
   fat: 65,
   geminiApiKey: '',
-  milkType: 'whole' // 'whole' or 'fatfree'
+  milkType: 'whole'
 };
 
-const DEFAULT_PRESETS = [
-  // Shakes
+const INITIAL_LIBRARY = [
   {
-    category: 'shakes',
-    id: 'shake_optA_whole',
+    id: 'lib_shake_optA_whole',
     name: 'Big Morning Shake (Option A - Whole Milk)',
-    portion: '500ml Fairlife Whole + 2 scoops Nutricost Whey',
-    calories: 573,
-    protein: 87,
-    carbs: 14,
-    fat: 20,
-    meal: 'breakfast'
+    basePortion: '500ml Fairlife Whole + 2 scoops Nutricost Whey',
+    baseCalories: 573,
+    baseProtein: 87,
+    baseCarbs: 14,
+    baseFat: 20,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'shakes',
-    id: 'shake_optA_skim',
+    id: 'lib_shake_optA_skim',
     name: 'Big Morning Shake (Option A - Fat-Free)',
-    portion: '500ml Fairlife Fat-Free + 2 scoops Nutricost Whey',
-    calories: 420,
-    protein: 86,
-    carbs: 14,
-    fat: 1,
-    meal: 'breakfast'
+    basePortion: '500ml Fairlife Fat-Free + 2 scoops Nutricost Whey',
+    baseCalories: 420,
+    baseProtein: 86,
+    baseCarbs: 14,
+    baseFat: 1,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'shakes',
-    id: 'shake_optB_whole',
+    id: 'lib_shake_optB_whole',
     name: 'Split Shake (Option B - Whole Milk)',
-    portion: '250ml Fairlife Whole + 1 scoop Nutricost Whey',
-    calories: 286,
-    protein: 43.5,
-    carbs: 7,
-    fat: 10,
-    meal: 'breakfast'
+    basePortion: '250ml Fairlife Whole + 1 scoop Nutricost Whey',
+    baseCalories: 286,
+    baseProtein: 43.5,
+    baseCarbs: 7,
+    baseFat: 10,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'shakes',
-    id: 'shake_optB_skim',
+    id: 'lib_shake_optB_skim',
     name: 'Split Shake (Option B - Fat-Free)',
-    portion: '250ml Fairlife Fat-Free + 1 scoop Nutricost Whey',
-    calories: 210,
-    protein: 43,
-    carbs: 7,
-    fat: 0.5,
-    meal: 'breakfast'
+    basePortion: '250ml Fairlife Fat-Free + 1 scoop Nutricost Whey',
+    baseCalories: 210,
+    baseProtein: 43,
+    baseCarbs: 7,
+    baseFat: 0.5,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'shakes',
-    id: 'nutricost_1scoop',
+    id: 'lib_nutricost_1scoop',
     name: 'Nutricost Whey Isolate (1 scoop)',
-    portion: '1 scoop (30g powder in water)',
-    calories: 130,
-    protein: 30,
-    carbs: 1,
-    fat: 0.5,
-    meal: 'snack'
+    basePortion: '1 scoop (30g powder in water)',
+    baseCalories: 130,
+    baseProtein: 30,
+    baseCarbs: 1,
+    baseFat: 0.5,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'shakes',
-    id: 'fairlife_whole_250',
+    id: 'lib_fairlife_whole_250',
     name: 'Fairlife Whole Milk (250 ml)',
-    portion: '1 glass (250 ml)',
-    calories: 156,
-    protein: 13.5,
-    carbs: 6,
-    fat: 9.5,
-    meal: 'breakfast'
+    basePortion: '1 glass (250 ml)',
+    baseCalories: 156,
+    baseProtein: 13.5,
+    baseCarbs: 6,
+    baseFat: 9.5,
+    photo: null,
+    isCustom: false
   },
-  // Whole Foods
   {
-    category: 'foods',
-    id: 'eggs_2',
+    id: 'lib_fairlife_skim_250',
+    name: 'Fairlife Fat-Free Milk (250 ml)',
+    basePortion: '1 glass (250 ml)',
+    baseCalories: 80,
+    baseProtein: 13,
+    baseCarbs: 6,
+    baseFat: 0,
+    photo: null,
+    isCustom: false
+  },
+  {
+    id: 'lib_eggs_2',
     name: 'Boiled Eggs (2 Large)',
-    portion: '2 whole eggs',
-    calories: 144,
-    protein: 12,
-    carbs: 0.8,
-    fat: 10,
-    meal: 'snack'
+    basePortion: '2 whole eggs',
+    baseCalories: 144,
+    baseProtein: 12,
+    baseCarbs: 0.8,
+    baseFat: 10,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'foods',
-    id: 'eggs_3',
-    name: 'Boiled Eggs (3 Large)',
-    portion: '3 whole eggs',
-    calories: 216,
-    protein: 18,
-    carbs: 1.2,
-    fat: 15,
-    meal: 'snack'
-  },
-  {
-    category: 'foods',
-    id: 'rice_1cup',
+    id: 'lib_rice_1cup',
     name: 'Cooked Basmati / White Rice',
-    portion: '1 medium bowl (150g)',
-    calories: 195,
-    protein: 4,
-    carbs: 43,
-    fat: 0.4,
-    meal: 'lunch'
+    basePortion: '1 medium bowl (150g)',
+    baseCalories: 195,
+    baseProtein: 4,
+    baseCarbs: 43,
+    baseFat: 0.4,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'foods',
-    id: 'dal_1bowl',
+    id: 'lib_dal_1bowl',
     name: 'Cooked Dal / Lentil Curry',
-    portion: '1 medium bowl (200g)',
-    calories: 160,
-    protein: 9,
-    carbs: 26,
-    fat: 3,
-    meal: 'dinner'
+    basePortion: '1 medium bowl (200g)',
+    baseCalories: 160,
+    baseProtein: 9,
+    baseCarbs: 26,
+    baseFat: 3,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'foods',
-    id: 'roti_2',
+    id: 'lib_roti_2',
     name: 'Chapati / Whole Wheat Roti',
-    portion: '2 pieces',
-    calories: 200,
-    protein: 6,
-    carbs: 40,
-    fat: 2,
-    meal: 'dinner'
+    basePortion: '2 pieces',
+    baseCalories: 200,
+    baseProtein: 6,
+    baseCarbs: 40,
+    baseFat: 2,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'foods',
-    id: 'chicken_breast_100',
+    id: 'lib_chicken_breast_100',
     name: 'Cooked Chicken Breast',
-    portion: '100g cooked',
-    calories: 165,
-    protein: 31,
-    carbs: 0,
-    fat: 3.6,
-    meal: 'lunch'
+    basePortion: '100g cooked',
+    baseCalories: 165,
+    baseProtein: 31,
+    baseCarbs: 0,
+    baseFat: 3.6,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'foods',
-    id: 'fish_fillet_100',
+    id: 'lib_fish_fillet_100',
     name: 'Cooked Fish Fillet',
-    portion: '100g cooked',
-    calories: 120,
-    protein: 22,
-    carbs: 0,
-    fat: 3,
-    meal: 'lunch'
+    basePortion: '100g cooked',
+    baseCalories: 120,
+    baseProtein: 22,
+    baseCarbs: 0,
+    baseFat: 3,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'foods',
-    id: 'mixed_veggies',
+    id: 'lib_mixed_veggies',
     name: 'Mixed Vegetables / Sabzi',
-    portion: '1 cup cooked / salad',
-    calories: 65,
-    protein: 2.5,
-    carbs: 12,
-    fat: 1.5,
-    meal: 'lunch'
+    basePortion: '1 cup cooked / salad',
+    baseCalories: 65,
+    baseProtein: 2.5,
+    baseCarbs: 12,
+    baseFat: 1.5,
+    photo: null,
+    isCustom: false
   },
   {
-    category: 'foods',
-    id: 'apple_banana',
-    name: 'Apple or Banana',
-    portion: '1 medium fresh fruit',
-    calories: 95,
-    protein: 1,
-    carbs: 25,
-    fat: 0.3,
-    meal: 'snack'
+    id: 'lib_apple_banana',
+    name: 'Fresh Apple / Banana',
+    basePortion: '1 medium fruit',
+    baseCalories: 95,
+    baseProtein: 1,
+    baseCarbs: 25,
+    baseFat: 0.3,
+    photo: null,
+    isCustom: false
   }
 ];
 
@@ -186,9 +185,14 @@ class NourishApp {
       currentDate: this.formatDate(new Date()),
       settings: this.loadSettings(),
       entries: this.loadEntries(),
+      library: this.loadLibrary(),
       bodyMetrics: this.loadBodyMetrics(),
-      currentScanMode: 'label', // 'label' or 'food'
+      currentScanMode: 'barcode', // 'barcode', 'label', 'food'
       selectedImageBase64: null,
+      selectedLibraryFood: null,
+      activePortionMultiplier: 1.0,
+      barcodeReader: null,
+      isBarcodeScanning: false,
       weeklyChart: null,
       waistChart: null
     };
@@ -196,7 +200,7 @@ class NourishApp {
     this.init();
   }
 
-  // ================= STORAGE HELPERS =================
+  // ================= STORAGE =================
   loadSettings() {
     try {
       const stored = localStorage.getItem('nourish_settings');
@@ -223,11 +227,27 @@ class NourishApp {
     localStorage.setItem('nourish_entries', JSON.stringify(this.state.entries));
   }
 
+  loadLibrary() {
+    try {
+      const stored = localStorage.getItem('nourish_library');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return [...INITIAL_LIBRARY];
+    } catch (e) {
+      return [...INITIAL_LIBRARY];
+    }
+  }
+
+  saveLibrary() {
+    localStorage.setItem('nourish_library', JSON.stringify(this.state.library));
+  }
+
   loadBodyMetrics() {
     try {
       const stored = localStorage.getItem('nourish_body_metrics');
       if (stored) return JSON.parse(stored);
-      // Sample initial entry
       return [
         { date: this.offsetDateString(-14), weight: 75.8, waist: 34.0 },
         { date: this.offsetDateString(-7), weight: 75.3, waist: 33.75 },
@@ -259,12 +279,12 @@ class NourishApp {
   init() {
     this.renderHeaderAndDate();
     this.renderTargetsInUI();
-    this.renderPresets();
+    this.renderLibraryUI();
+    this.populateLibraryDropdown();
     this.renderDayLog();
     this.setupEventListeners();
     this.registerServiceWorker();
 
-    // If fresh install and no entries, prompt with sample day
     if (this.state.entries.length === 0) {
       this.loadSampleDay();
     } else {
@@ -286,11 +306,10 @@ class NourishApp {
 
   // ================= EVENT LISTENERS =================
   setupEventListeners() {
-    // Navigation Tabs (Desktop & Mobile)
+    // Navigation Tabs
     document.querySelectorAll('[data-tab]').forEach((tabBtn) => {
-      tabBtn.addEventListener('click', (e) => {
-        const tabTarget = tabBtn.getAttribute('data-tab');
-        this.switchTab(tabTarget);
+      tabBtn.addEventListener('click', () => {
+        this.switchTab(tabBtn.getAttribute('data-tab'));
       });
     });
 
@@ -304,33 +323,77 @@ class NourishApp {
       this.updateDailyScorecard();
     });
 
-    // Option A / Option B plan views
+    // Option A & Option B Plans
     document.getElementById('viewOptionABtn').addEventListener('click', () => this.togglePlanView('A'));
     document.getElementById('viewOptionBBtn').addEventListener('click', () => this.togglePlanView('B'));
     document.getElementById('applyOptionAToTodayBtn').addEventListener('click', () => this.applyOptionTemplate('A'));
     document.getElementById('applyOptionBToTodayBtn').addEventListener('click', () => this.applyOptionTemplate('B'));
 
-    // Manual Food Modal
+    // Add Food Modal Controls
     document.getElementById('openAddModalBtn').addEventListener('click', () => this.openAddFoodModal());
     document.getElementById('closeAddFoodModalBtn').addEventListener('click', () => this.closeAddFoodModal());
-    document.getElementById('cancelAddFoodBtn').addEventListener('click', () => this.closeAddFoodModal());
-    document.getElementById('foodEntryForm').addEventListener('submit', (e) => this.handleFoodFormSubmit(e));
+    document.getElementById('cancelCustomFoodBtn').addEventListener('click', () => this.closeAddFoodModal());
+    document.getElementById('addModeLibraryBtn').addEventListener('click', () => this.setAddModalMode('library'));
+    document.getElementById('addModeCustomBtn').addEventListener('click', () => this.setAddModalMode('custom'));
 
-    // Staples / Presets Modal
-    document.getElementById('openPresetsModalBtn').addEventListener('click', () => this.openPresetsModal());
-    document.getElementById('closePresetsModalBtn').addEventListener('click', () => this.closePresetsModal());
-    document.getElementById('quickLogMorningShakeBtn').addEventListener('click', () => {
-      this.logPresetById('shake_optA_whole');
+    // Library Selector in Add Modal
+    document.getElementById('libraryFoodSelect').addEventListener('change', (e) => {
+      const selectedId = e.target.value;
+      this.selectLibraryFoodById(selectedId);
     });
 
-    // Photo Scanner Modal
+    // Portion Multiplier Pills & Input
+    document.querySelectorAll('.portion-pill').forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const mult = parseFloat(pill.getAttribute('data-mult'));
+        this.setPortionMultiplier(mult);
+      });
+    });
+
+    document.getElementById('portionMultiplierInput').addEventListener('input', (e) => {
+      const mult = parseFloat(e.target.value) || 1.0;
+      this.setPortionMultiplier(mult, false);
+    });
+
+    document.getElementById('confirmAddFromLibraryBtn').addEventListener('click', () => {
+      this.addSelectedLibraryFoodToDiary();
+    });
+
+    document.getElementById('customFoodEntryForm').addEventListener('submit', (e) => {
+      this.handleCustomFoodSubmit(e);
+    });
+
+    // Library Tab Actions
+    document.getElementById('openLibraryBtn').addEventListener('click', () => this.switchTab('tabLibrary'));
+    document.getElementById('addNewLibraryFoodBtn').addEventListener('click', () => {
+      this.openAddFoodModal('general', 'custom');
+    });
+    document.getElementById('librarySearchInput').addEventListener('input', (e) => {
+      this.renderLibraryUI(e.target.value);
+    });
+
+    // Quick Log Morning Shake
+    document.getElementById('quickLogMorningShakeBtn').addEventListener('click', () => {
+      this.logFoodFromLibrary('lib_shake_optA_whole', 1.0, 'breakfast');
+    });
+
+    // Scanner Modal Controls
     const openScanHandler = () => this.openScanModal();
     document.getElementById('openScanModalBtn').addEventListener('click', openScanHandler);
     document.getElementById('headerScanBtn').addEventListener('click', openScanHandler);
     document.getElementById('closeScanModalBtn').addEventListener('click', () => this.closeScanModal());
 
-    document.getElementById('scanModeLabel').addEventListener('click', () => this.setScanMode('label'));
-    document.getElementById('scanModeFood').addEventListener('click', () => this.setScanMode('food'));
+    document.getElementById('scanModeBarcodeBtn').addEventListener('click', () => this.setScanMode('barcode'));
+    document.getElementById('scanModeLabelBtn').addEventListener('click', () => this.setScanMode('label'));
+    document.getElementById('scanModeFoodBtn').addEventListener('click', () => this.setScanMode('food'));
+
+    document.getElementById('startLiveBarcodeCamBtn').addEventListener('click', () => this.toggleLiveBarcodeScanner());
+    document.getElementById('barcodePhotoInput').addEventListener('change', (e) => this.handleBarcodePhotoUpload(e));
+    document.getElementById('lookupBarcodeBtn').addEventListener('click', () => {
+      const code = document.getElementById('manualBarcodeInput').value.trim();
+      if (code) this.lookupBarcodeOnline(code);
+    });
+
     document.getElementById('cameraPhotoInput').addEventListener('change', (e) => this.handlePhotoSelected(e));
     document.getElementById('retakePhotoBtn').addEventListener('click', () => this.resetPhotoScanner());
     document.getElementById('saveDetectedFoodBtn').addEventListener('click', () => this.saveDetectedFoodToDiary());
@@ -341,7 +404,7 @@ class NourishApp {
     document.getElementById('saveApiKeyBtn').addEventListener('click', () => this.saveGeminiApiKey());
     document.getElementById('saveBodyMetricBtn').addEventListener('click', () => this.saveBodyMetricToday());
 
-    // Backup & Sync
+    // Backup & Restore
     document.getElementById('exportDataBtn').addEventListener('click', () => this.exportBackupData());
     document.getElementById('importDataInput').addEventListener('change', (e) => this.importBackupData(e));
     document.getElementById('loadSampleDataBtn').addEventListener('click', () => this.loadSampleDay());
@@ -351,10 +414,9 @@ class NourishApp {
   // ================= TAB MANAGEMENT =================
   switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach((el) => el.classList.add('hidden'));
-    const targetContent = document.getElementById(tabId);
-    if (targetContent) targetContent.classList.remove('hidden');
+    const target = document.getElementById(tabId);
+    if (target) target.classList.remove('hidden');
 
-    // Update active tab buttons
     document.querySelectorAll('[data-tab]').forEach((btn) => {
       if (btn.getAttribute('data-tab') === tabId) {
         btn.classList.add('active', 'border-emerald-500', 'text-emerald-400');
@@ -365,13 +427,10 @@ class NourishApp {
       }
     });
 
-    if (tabId === 'tabAnalytics') {
-      this.renderCharts();
-    }
+    if (tabId === 'tabAnalytics') this.renderCharts();
+    if (tabId === 'tabLibrary') this.renderLibraryUI();
 
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
+    if (window.lucide) window.lucide.createIcons();
   }
 
   // ================= DATE CONTROL =================
@@ -393,14 +452,10 @@ class NourishApp {
     const options = { weekday: 'short', month: 'short', day: 'numeric' };
     const dateFormatted = dateObj.toLocaleDateString('en-US', options);
 
-    if (this.state.currentDate === todayStr) {
-      displayEl.textContent = `Today (${dateFormatted})`;
-    } else {
-      displayEl.textContent = dateFormatted;
-    }
+    displayEl.textContent = this.state.currentDate === todayStr ? `Today (${dateFormatted})` : dateFormatted;
   }
 
-  // ================= CALORIE & MACRO SCORECARD =================
+  // ================= SCORECARD & MACROS =================
   updateDailyScorecard() {
     const currentEntries = this.state.entries.filter((item) => item.date === this.state.currentDate);
 
@@ -420,7 +475,6 @@ class NourishApp {
     const targetCarbs = this.state.settings.carbs;
     const targetFat = this.state.settings.fat;
 
-    // Remaining calories
     const remainingCal = targetCal - totals.calories;
     const calRemainingEl = document.getElementById('caloriesRemainingText');
     calRemainingEl.textContent = remainingCal >= 0 ? remainingCal.toLocaleString() : `+${Math.abs(remainingCal).toLocaleString()}`;
@@ -441,7 +495,6 @@ class NourishApp {
     const protLeft = Math.max(0, Math.round(targetProt - protCurrent));
     document.getElementById('proteinGramsLeft').textContent = protLeft > 0 ? `${protLeft}g left` : 'Target Met!';
 
-    // Protein badge status
     const protBadge = document.getElementById('proteinStatusBadge');
     if (protCurrent >= 140) {
       protBadge.textContent = 'Protein Goal: Recomp Target Met! 🔥';
@@ -469,7 +522,7 @@ class NourishApp {
     const fatLeft = Math.max(0, Math.round(targetFat - fatCurrent));
     document.getElementById('fatGramsLeft').textContent = fatLeft > 0 ? `${fatLeft}g left` : 'Done';
 
-    // Macro distribution ratio bar
+    // Ratios
     const calFromProt = totals.protein * 4;
     const calFromCarb = totals.carbs * 4;
     const calFromFat = totals.fat * 9;
@@ -483,8 +536,8 @@ class NourishApp {
     document.getElementById('ratioBarCarbs').style.width = `${actualCarbPct}%`;
     document.getElementById('ratioBarFat').style.width = `${actualFatPct}%`;
 
-    document.getElementById('macroRatioSummary').textContent = 
-      totals.calories > 0 
+    document.getElementById('macroRatioSummary').textContent =
+      totals.calories > 0
         ? `Actual: ${actualProtPct}% P · ${actualCarbPct}% C · ${actualFatPct}% F (Target: 30% · 41% · 29%)`
         : `Target: 30% P · 41% C · 29% F`;
   }
@@ -502,18 +555,20 @@ class NourishApp {
     document.getElementById('geminiApiKeyInput').value = this.state.settings.geminiApiKey || '';
   }
 
-  // ================= DAILY LOG RENDERING =================
+  // ================= DAILY DIARY RENDERING =================
   renderDayLog() {
     const container = document.getElementById('mealsContainer');
     container.innerHTML = '';
 
     const dayEntries = this.state.entries.filter((item) => item.date === this.state.currentDate);
 
+    // Categories including "General Food / Anytime"
     const mealCategories = [
       { id: 'breakfast', title: 'Breakfast / Morning', icon: 'coffee', defaultTime: '8:00 AM' },
       { id: 'lunch', title: 'Lunch', icon: 'sun', defaultTime: '1:00 PM' },
       { id: 'snack', title: 'Afternoon Snack / Pre-Workout', icon: 'apple', defaultTime: '4:30 PM' },
-      { id: 'dinner', title: 'Dinner / Post-Workout', icon: 'moon', defaultTime: '8:00 PM' }
+      { id: 'dinner', title: 'Dinner / Post-Workout', icon: 'moon', defaultTime: '8:00 PM' },
+      { id: 'general', title: 'General Food / Anytime (No Category)', icon: 'utensils', defaultTime: 'Anytime' }
     ];
 
     if (dayEntries.length === 0) {
@@ -522,13 +577,13 @@ class NourishApp {
           <div class="w-12 h-12 mx-auto rounded-full bg-white/5 flex items-center justify-center text-slate-400">
             <i data-lucide="utensils" class="w-6 h-6"></i>
           </div>
-          <h4 class="text-sm font-bold text-white">No foods logged for this day yet</h4>
+          <h4 class="text-sm font-bold text-white">No food logged for today yet</h4>
           <p class="text-xs text-slate-400 max-w-sm mx-auto">
-            Tap "Your Staples" or "+ Morning Shake" to log with one tap, or snap a photo of your meal or nutrition label!
+            Choose from your saved food library, scan a barcode, or snap a photo of your meal!
           </p>
-          <div class="flex justify-center gap-2 pt-2">
-            <button onclick="app.logPresetById('shake_optA_whole')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
-              + Log Morning Shake (87g Protein)
+          <div class="flex justify-center gap-2 pt-2 flex-wrap">
+            <button onclick="app.logFoodFromLibrary('lib_shake_optA_whole', 1.0, 'breakfast')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow">
+              + Morning Shake (87g Protein)
             </button>
             <button onclick="app.applyOptionTemplate('B')" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold">
               Apply Option B Plan
@@ -541,7 +596,12 @@ class NourishApp {
     }
 
     mealCategories.forEach((cat) => {
-      const itemsInMeal = dayEntries.filter((item) => item.meal === cat.id);
+      const itemsInMeal = dayEntries.filter((item) => (item.meal || 'general') === cat.id);
+      if (cat.id === 'general' && itemsInMeal.length === 0) {
+        // Only show General Food section if there are uncategorized items or on request
+        return;
+      }
+
       const mealTotals = itemsInMeal.reduce(
         (acc, i) => {
           acc.calories += Number(i.calories) || 0;
@@ -594,16 +654,16 @@ class NourishApp {
                   <div>
                     <div class="text-xs font-semibold text-white">${this.escapeHtml(item.name)}</div>
                     <div class="text-[10px] text-slate-400">
-                      ${item.portion ? `${this.escapeHtml(item.portion)} • ` : ''}
-                      <span class="text-emerald-400 font-medium">${item.protein || 0}g protein</span> | 
-                      <span>${item.carbs || 0}g carbs</span> | 
-                      <span>${item.fat || 0}g fat</span>
+                      ${item.portion ? `<span class="text-slate-300">${this.escapeHtml(item.portion)}</span> • ` : ''}
+                      <span class="text-emerald-400 font-semibold">${item.protein || 0}g P</span> | 
+                      <span>${item.carbs || 0}g C</span> | 
+                      <span>${item.fat || 0}g F</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold text-slate-200">${item.calories || 0} kcal</span>
+                  <span class="text-xs font-bold text-slate-200">${Math.round(item.calories) || 0} kcal</span>
                   <button onclick="app.deleteEntry('${item.id}')" class="p-1 rounded text-slate-500 hover:text-red-400 transition-colors opacity-70 group-hover:opacity-100" title="Delete">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                   </button>
@@ -627,96 +687,855 @@ class NourishApp {
     return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   }
 
-  // ================= PRESETS RENDERING & LOGGING =================
-  renderPresets() {
-    const shakeContainer = document.getElementById('shakePresetsList');
-    const foodContainer = document.getElementById('wholeFoodPresetsList');
+  // ================= MY FOOD LIBRARY & STAPLES =================
+  renderLibraryUI(searchQuery = '') {
+    const container = document.getElementById('libraryCardsContainer');
+    if (!container) return;
+    container.innerHTML = '';
 
-    shakeContainer.innerHTML = '';
-    foodContainer.innerHTML = '';
+    const q = searchQuery.toLowerCase().trim();
+    const filtered = this.state.library.filter((item) => {
+      if (!q) return true;
+      return item.name.toLowerCase().includes(q) || (item.basePortion && item.basePortion.toLowerCase().includes(q));
+    });
 
-    DEFAULT_PRESETS.forEach((preset) => {
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full py-8 text-center text-xs text-slate-400">
+          No foods match "${this.escapeHtml(searchQuery)}". Tap "+ Add Food to Library" to save a new one!
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach((food) => {
       const card = document.createElement('div');
-      card.className = 'p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between cursor-pointer transition-all group';
+      card.className = 'glass-panel p-3 flex items-center justify-between hover:bg-white/10 transition-all border border-white/10 group';
+
       card.innerHTML = `
-        <div>
-          <div class="text-xs font-semibold text-white group-hover:text-emerald-300 transition-colors">${preset.name}</div>
-          <div class="text-[10px] text-slate-400">${preset.portion}</div>
-          <div class="text-[10px] font-medium text-emerald-400 mt-0.5">
-            ${preset.protein}g P · ${preset.calories} kcal · ${preset.carbs}g C · ${preset.fat}g F
+        <div class="flex items-center gap-3">
+          ${
+            food.photo
+              ? `<img src="${food.photo}" class="w-12 h-12 rounded-xl object-cover border border-white/10" />`
+              : `<div class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                  ${Math.round(food.baseProtein)}g P
+                </div>`
+          }
+          <div>
+            <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">${this.escapeHtml(food.name)}</div>
+            <div class="text-[10px] text-slate-400">${this.escapeHtml(food.basePortion || '1 serving')}</div>
+            <div class="text-[10px] font-semibold text-emerald-400 mt-0.5">
+              ${food.baseProtein}g P · ${food.baseCalories} kcal · ${food.baseCarbs}g C · ${food.baseFat}g F
+            </div>
           </div>
         </div>
-        <button class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
-          + Add
-        </button>
+
+        <div class="flex items-center gap-1.5">
+          <button onclick="app.openAddFoodModalWithItem('${food.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow">
+            Log Portion
+          </button>
+          ${
+            food.isCustom
+              ? `<button onclick="app.deleteLibraryItem('${food.id}')" class="p-1.5 rounded-lg text-slate-500 hover:text-red-400 opacity-60 group-hover:opacity-100" title="Delete from Library">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>`
+              : ''
+          }
+        </div>
       `;
 
-      card.addEventListener('click', () => {
-        this.logPreset(preset);
-        this.closePresetsModal();
-      });
-
-      if (preset.category === 'shakes') {
-        shakeContainer.appendChild(card);
-      } else {
-        foodContainer.appendChild(card);
-      }
+      container.appendChild(card);
     });
-  }
-
-  logPreset(preset, targetDate = null) {
-    const newEntry = {
-      id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-      date: targetDate || this.state.currentDate,
-      meal: preset.meal || 'lunch',
-      name: preset.name,
-      portion: preset.portion,
-      calories: preset.calories,
-      protein: preset.protein,
-      carbs: preset.carbs,
-      fat: preset.fat,
-      photo: null
-    };
-
-    this.state.entries.push(newEntry);
-    this.saveEntries();
-    this.renderDayLog();
-    this.updateDailyScorecard();
-    this.showToast(`Logged "${preset.name}"!`);
-  }
-
-  logPresetById(presetId) {
-    const preset = DEFAULT_PRESETS.find((p) => p.id === presetId);
-    if (preset) {
-      this.logPreset(preset);
-    }
-  }
-
-  // ================= ROUTINE PLANS (OPTION A VS OPTION B) =================
-  togglePlanView(optionLetter) {
-    const optABtn = document.getElementById('viewOptionABtn');
-    const optBBtn = document.getElementById('viewOptionBBtn');
-    const optADetails = document.getElementById('optionADetails');
-    const optBDetails = document.getElementById('optionBDetails');
-
-    if (optionLetter === 'A') {
-      optABtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition-all shadow';
-      optBBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all';
-      optADetails.classList.remove('hidden');
-      optBDetails.classList.add('hidden');
-    } else {
-      optBBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition-all shadow';
-      optABtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all';
-      optBDetails.classList.remove('hidden');
-      optADetails.classList.add('hidden');
-    }
 
     if (window.lucide) window.lucide.createIcons();
   }
 
-  applyOptionTemplate(optionLetter) {
-    if (optionLetter === 'A') {
-      // Option A: Giant Morning Shake + Lunch + Dinner
+  populateLibraryDropdown() {
+    const select = document.getElementById('libraryFoodSelect');
+    if (!select) return;
+    select.innerHTML = '';
+
+    this.state.library.forEach((item) => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = `${item.name} (${item.baseProtein}g P • ${item.baseCalories} kcal)`;
+      select.appendChild(opt);
+    });
+
+    if (this.state.library.length > 0) {
+      this.selectLibraryFoodById(this.state.library[0].id);
+    }
+  }
+
+  selectLibraryFoodById(id) {
+    const item = this.state.library.find((i) => i.id === id);
+    if (!item) return;
+
+    this.state.selectedLibraryFood = item;
+
+    document.getElementById('selectedLibName').textContent = item.name;
+    document.getElementById('selectedLibBasePortion').textContent = `Base: ${item.basePortion || '1 serving'}`;
+    document.getElementById('selectedLibBaseKcal').textContent = `${item.baseCalories} kcal`;
+    document.getElementById('selectedLibBaseProt').textContent = `${item.baseProtein}g Protein`;
+
+    const imgBox = document.getElementById('selectedLibImgBox');
+    if (item.photo) {
+      imgBox.innerHTML = `<img src="${item.photo}" class="w-full h-full object-cover" />`;
+    } else {
+      imgBox.innerHTML = `<span class="text-xs font-bold text-emerald-400">${Math.round(item.baseProtein)}g</span>`;
+    }
+
+    this.recalculateScaledMacros();
+  }
+
+  setPortionMultiplier(multiplier, updateInput = true) {
+    this.state.activePortionMultiplier = Math.max(0.1, multiplier);
+
+    if (updateInput) {
+      document.getElementById('portionMultiplierInput').value = multiplier;
+    }
+
+    // Update active pill button
+    document.querySelectorAll('.portion-pill').forEach((pill) => {
+      const pMult = parseFloat(pill.getAttribute('data-mult'));
+      if (Math.abs(pMult - multiplier) < 0.05) {
+        pill.classList.add('active');
+      } else {
+        pill.classList.remove('active');
+      }
+    });
+
+    document.getElementById('calculatedPortionLabel').textContent = `${multiplier}x portion`;
+    this.recalculateScaledMacros();
+  }
+
+  recalculateScaledMacros() {
+    const food = this.state.selectedLibraryFood;
+    if (!food) return;
+
+    const mult = this.state.activePortionMultiplier;
+
+    const scaledCal = Math.round(food.baseCalories * mult);
+    const scaledProt = Math.round(food.baseProtein * mult * 10) / 10;
+    const scaledCarb = Math.round(food.baseCarbs * mult * 10) / 10;
+    const scaledFat = Math.round(food.baseFat * mult * 10) / 10;
+
+    document.getElementById('scaledCaloriesText').textContent = `${scaledCal} kcal`;
+    document.getElementById('scaledProteinText').textContent = `${scaledProt}g`;
+    document.getElementById('scaledCarbsText').textContent = `${scaledCarb}g`;
+    document.getElementById('scaledFatText').textContent = `${scaledFat}g`;
+  }
+
+  addSelectedLibraryFoodToDiary() {
+    const food = this.state.selectedLibraryFood;
+    if (!food) return;
+
+    const mult = this.state.activePortionMultiplier;
+    const meal = document.getElementById('libraryMealSelect').value;
+
+    const scaledCal = Math.round(food.baseCalories * mult);
+    const scaledProt = Math.round(food.baseProtein * mult * 10) / 10;
+    const scaledCarb = Math.round(food.baseCarbs * mult * 10) / 10;
+    const scaledFat = Math.round(food.baseFat * mult * 10) / 10;
+
+    const portionLabel = mult === 1.0 ? food.basePortion : `${mult}x (${food.basePortion || 'serving'})`;
+
+    const entry = {
+      id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      date: this.state.currentDate,
+      name: food.name,
+      meal,
+      portion: portionLabel,
+      calories: scaledCal,
+      protein: scaledProt,
+      carbs: scaledCarb,
+      fat: scaledFat,
+      photo: food.photo || null
+    };
+
+    this.state.entries.push(entry);
+    this.saveEntries();
+    this.renderDayLog();
+    this.updateDailyScorecard();
+    this.closeAddFoodModal();
+    this.showToast(`Logged ${portionLabel} of "${food.name}"!`);
+  }
+
+  logFoodFromLibrary(libraryId, multiplier = 1.0, mealCategory = 'general') {
+    const food = this.state.library.find((i) => i.id === libraryId);
+    if (!food) return;
+
+    const scaledCal = Math.round(food.baseCalories * multiplier);
+    const scaledProt = Math.round(food.baseProtein * multiplier * 10) / 10;
+    const scaledCarb = Math.round(food.baseCarbs * multiplier * 10) / 10;
+    const scaledFat = Math.round(food.baseFat * multiplier * 10) / 10;
+
+    const portionLabel = multiplier === 1.0 ? food.basePortion : `${multiplier}x (${food.basePortion || 'serving'})`;
+
+    const entry = {
+      id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      date: this.state.currentDate,
+      name: food.name,
+      meal: mealCategory,
+      portion: portionLabel,
+      calories: scaledCal,
+      protein: scaledProt,
+      carbs: scaledCarb,
+      fat: scaledFat,
+      photo: food.photo || null
+    };
+
+    this.state.entries.push(entry);
+    this.saveEntries();
+    this.renderDayLog();
+    this.updateDailyScorecard();
+    this.showToast(`Logged "${food.name}"!`);
+  }
+
+  openAddFoodModalWithItem(libraryId) {
+    this.openAddFoodModal();
+    this.setAddModalMode('library');
+    document.getElementById('libraryFoodSelect').value = libraryId;
+    this.selectLibraryFoodById(libraryId);
+  }
+
+  deleteLibraryItem(id) {
+    if (confirm('Delete this food item from your library?')) {
+      this.state.library = this.state.library.filter((i) => i.id !== id);
+      this.saveLibrary();
+      this.renderLibraryUI();
+      this.populateLibraryDropdown();
+      this.showToast('Item removed from Library');
+    }
+  }
+
+  // ================= ADD MODAL & CUSTOM FOOD =================
+  openAddFoodModal(defaultMeal = 'lunch', mode = 'library') {
+    document.getElementById('addFoodModal').classList.remove('hidden');
+    document.getElementById('libraryMealSelect').value = defaultMeal;
+    document.getElementById('customFoodMealSelect').value = defaultMeal;
+    this.setPortionMultiplier(1.0);
+    this.setAddModalMode(mode);
+  }
+
+  closeAddFoodModal() {
+    document.getElementById('addFoodModal').classList.add('hidden');
+  }
+
+  setAddModalMode(mode) {
+    const libBtn = document.getElementById('addModeLibraryBtn');
+    const custBtn = document.getElementById('addModeCustomBtn');
+    const libSec = document.getElementById('addFoodFromLibrarySection');
+    const custSec = document.getElementById('customFoodEntryForm');
+
+    if (mode === 'library') {
+      libBtn.className = 'flex-1 py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow';
+      custBtn.className = 'flex-1 py-2 rounded-lg font-semibold text-slate-300 hover:text-white';
+      libSec.classList.remove('hidden');
+      custSec.classList.add('hidden');
+    } else {
+      custBtn.className = 'flex-1 py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow';
+      libBtn.className = 'flex-1 py-2 rounded-lg font-semibold text-slate-300 hover:text-white';
+      custSec.classList.remove('hidden');
+      libSec.classList.add('hidden');
+    }
+  }
+
+  handleCustomFoodSubmit(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('customFoodNameInput').value.trim();
+    const basePortion = document.getElementById('customFoodPortionInput').value.trim() || '1 serving';
+    const mult = parseFloat(document.getElementById('customFoodMultiplierInput').value) || 1.0;
+    const baseCal = parseFloat(document.getElementById('customFoodCaloriesInput').value) || 0;
+    const baseProt = parseFloat(document.getElementById('customFoodProteinInput').value) || 0;
+    const baseCarb = parseFloat(document.getElementById('customFoodCarbsInput').value) || 0;
+    const baseFat = parseFloat(document.getElementById('customFoodFatInput').value) || 0;
+    const meal = document.getElementById('customFoodMealSelect').value;
+    const saveToLib = document.getElementById('saveCustomToLibraryCheck').checked;
+
+    const scaledCal = Math.round(baseCal * mult);
+    const scaledProt = Math.round(baseProt * mult * 10) / 10;
+    const scaledCarb = Math.round(baseCarb * mult * 10) / 10;
+    const scaledFat = Math.round(baseFat * mult * 10) / 10;
+
+    const entry = {
+      id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      date: this.state.currentDate,
+      name,
+      meal,
+      portion: mult === 1.0 ? basePortion : `${mult}x (${basePortion})`,
+      calories: scaledCal,
+      protein: scaledProt,
+      carbs: scaledCarb,
+      fat: scaledFat,
+      photo: null
+    };
+
+    this.state.entries.push(entry);
+    this.saveEntries();
+
+    if (saveToLib) {
+      this.state.library.push({
+        id: 'lib_custom_' + Date.now(),
+        name,
+        basePortion,
+        baseCalories: baseCal,
+        baseProtein: baseProt,
+        baseCarbs: baseCarb,
+        baseFat: baseFat,
+        photo: null,
+        isCustom: true
+      });
+      this.saveLibrary();
+      this.renderLibraryUI();
+      this.populateLibraryDropdown();
+    }
+
+    this.renderDayLog();
+    this.updateDailyScorecard();
+    this.closeAddFoodModal();
+    this.showToast(`Logged "${name}"!`);
+  }
+
+  deleteEntry(id) {
+    this.state.entries = this.state.entries.filter((i) => i.id !== id);
+    this.saveEntries();
+    this.renderDayLog();
+    this.updateDailyScorecard();
+    this.showToast('Item deleted');
+  }
+
+  // ================= SMART SCANNER (BARCODE, NUTRITION LABEL & AI MEAL) =================
+  openScanModal() {
+    document.getElementById('scanPhotoModal').classList.remove('hidden');
+    this.setScanMode('barcode');
+    this.resetPhotoScanner();
+  }
+
+  closeScanModal() {
+    this.stopLiveBarcodeScanner();
+    document.getElementById('scanPhotoModal').classList.add('hidden');
+  }
+
+  setScanMode(mode) {
+    this.state.currentScanMode = mode;
+    this.stopLiveBarcodeScanner();
+
+    const barcodeBtn = document.getElementById('scanModeBarcodeBtn');
+    const labelBtn = document.getElementById('scanModeLabelBtn');
+    const foodBtn = document.getElementById('scanModeFoodBtn');
+
+    const barcodeSec = document.getElementById('barcodeScannerSection');
+    const photoSec = document.getElementById('photoUploadSection');
+    const foodHintBox = document.getElementById('foodHintBox');
+
+    barcodeBtn.className = 'py-2 rounded-lg font-semibold text-slate-300 hover:text-white text-center';
+    labelBtn.className = 'py-2 rounded-lg font-semibold text-slate-300 hover:text-white text-center';
+    foodBtn.className = 'py-2 rounded-lg font-semibold text-slate-300 hover:text-white text-center';
+
+    if (mode === 'barcode') {
+      barcodeBtn.className = 'py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow text-center';
+      barcodeSec.classList.remove('hidden');
+      photoSec.classList.add('hidden');
+    } else if (mode === 'label') {
+      labelBtn.className = 'py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow text-center';
+      barcodeSec.classList.add('hidden');
+      photoSec.classList.remove('hidden');
+      foodHintBox.classList.add('hidden');
+    } else {
+      foodBtn.className = 'py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow text-center';
+      barcodeSec.classList.add('hidden');
+      photoSec.classList.remove('hidden');
+      foodHintBox.classList.remove('hidden');
+    }
+  }
+
+  resetPhotoScanner() {
+    document.getElementById('cameraPhotoInput').value = '';
+    document.getElementById('photoPlaceholderState').classList.remove('hidden');
+    document.getElementById('photoPreviewContainer').classList.add('hidden');
+    document.getElementById('scanningProgressIndicator').classList.add('hidden');
+    document.getElementById('detectedResultsContainer').classList.add('hidden');
+    document.getElementById('detectedImgThumb').classList.add('hidden');
+    this.state.selectedImageBase64 = null;
+  }
+
+  // --- LIVE BARCODE SCANNING (ZXING & BROWSER DETECTOR) ---
+  async toggleLiveBarcodeScanner() {
+    if (this.state.isBarcodeScanning) {
+      this.stopLiveBarcodeScanner();
+    } else {
+      this.startLiveBarcodeScanner();
+    }
+  }
+
+  async startLiveBarcodeScanner() {
+    const video = document.getElementById('barcodeVideo');
+    const camBox = document.getElementById('barcodeCameraBox');
+    const btn = document.getElementById('startLiveBarcodeCamBtn');
+
+    camBox.classList.remove('hidden');
+    btn.innerHTML = `<i data-lucide="video-off" class="w-4 h-4"></i> Stop Camera`;
+    this.state.isBarcodeScanning = true;
+
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
+        this.state.barcodeReader = new ZXing.BrowserMultiFormatReader();
+        this.state.barcodeReader.decodeFromVideoDevice(null, 'barcodeVideo', (result, err) => {
+          if (result && result.text) {
+            this.handleBarcodeDetected(result.text);
+          }
+        });
+      } else {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        video.play();
+      }
+    } catch (err) {
+      console.warn('Camera stream error:', err);
+      alert('Could not access camera for live scanning. You can take a photo of the barcode or type the code below.');
+      this.stopLiveBarcodeScanner();
+    }
+  }
+
+  stopLiveBarcodeScanner() {
+    this.state.isBarcodeScanning = false;
+    const camBox = document.getElementById('barcodeCameraBox');
+    if (camBox) camBox.classList.add('hidden');
+
+    const btn = document.getElementById('startLiveBarcodeCamBtn');
+    if (btn) btn.innerHTML = `<i data-lucide="camera" class="w-4 h-4"></i> Start Camera Scan`;
+
+    if (this.state.barcodeReader) {
+      try {
+        this.state.barcodeReader.reset();
+      } catch (e) {}
+    }
+
+    const video = document.getElementById('barcodeVideo');
+    if (video && video.srcObject) {
+      const stream = video.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+      video.srcObject = null;
+    }
+  }
+
+  handleBarcodeDetected(barcodeText) {
+    this.stopLiveBarcodeScanner();
+    if (navigator.vibrate) navigator.vibrate(100);
+    this.lookupBarcodeOnline(barcodeText);
+  }
+
+  async handleBarcodePhotoUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    this.showScanningIndicator('Scanning barcode image...', 'Detecting barcode format...');
+
+    const downscaledBase64 = await this.downscaleImageFile(file, 1200);
+
+    // Try decoding barcode with ZXing
+    if (window.ZXing) {
+      try {
+        const reader = new ZXing.BrowserMultiFormatReader();
+        const img = new Image();
+        img.src = downscaledBase64;
+        await new Promise((resolve) => (img.onload = resolve));
+        const result = await reader.decodeFromImageElement(img);
+        if (result && result.text) {
+          this.lookupBarcodeOnline(result.text);
+          return;
+        }
+      } catch (err) {
+        console.warn('ZXing photo barcode detection fallback:', err);
+      }
+    }
+
+    // Fallback: Ask user or pass to Gemini
+    this.hideScanningIndicator();
+    alert('Barcode could not be automatically read from this photo. Please try pointing camera directly or enter barcode number.');
+  }
+
+  // --- ONLINE REAL-TIME BARCODE LOOKUP (OPEN FOOD FACTS) ---
+  async lookupBarcodeOnline(barcode) {
+    this.showScanningIndicator('Querying Open Food Facts Web Database...', `Looking up barcode: ${barcode}`);
+
+    try {
+      const cleanCode = barcode.trim();
+      const url = `https://world.openfoodfacts.org/api/v0/product/${cleanCode}.json`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.status === 1 && data.product) {
+        const p = data.product;
+        const name = p.product_name || p.generic_name || `Product (${cleanCode})`;
+        const brand = p.brands ? `${p.brands} - ` : '';
+        const serving = p.serving_size || '1 serving (100g)';
+        const photo = p.image_front_url || p.image_url || null;
+
+        const nutriments = p.nutriments || {};
+        const calories = Math.round(nutriments['energy-kcal_serving'] || nutriments['energy-kcal_100g'] || nutriments['energy-kcal'] || 0);
+        const protein = Math.round((nutriments['proteins_serving'] || nutriments['proteins_100g'] || 0) * 10) / 10;
+        const carbs = Math.round((nutriments['carbohydrates_serving'] || nutriments['carbohydrates_100g'] || 0) * 10) / 10;
+        const fat = Math.round((nutriments['fat_serving'] || nutriments['fat_100g'] || 0) * 10) / 10;
+
+        this.populateDetectedResults({
+          name: `${brand}${name}`,
+          portion: serving,
+          calories,
+          protein,
+          carbs,
+          fat,
+          photo
+        });
+        this.hideScanningIndicator();
+        this.showToast(`Found "${name}" online!`);
+      } else {
+        this.hideScanningIndicator();
+        alert(`Barcode ${barcode} not found in Open Food Facts. You can scan its Nutrition Label instead or enter details manually.`);
+      }
+    } catch (err) {
+      console.error('Barcode lookup error:', err);
+      this.hideScanningIndicator();
+      alert('Network error looking up barcode. Please check your internet connection.');
+    }
+  }
+
+  // --- PHOTO ANALYSIS (CANVAS DOWNSCALING + OCR / GEMINI VISION) ---
+  async handlePhotoSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    this.showScanningIndicator('Downscaling & pre-processing photo...', 'Optimizing image clarity for analysis...');
+
+    // Offscreen canvas downscale (prevents memory lag on mobile)
+    const downscaledBase64 = await this.downscaleImageFile(file, 1200);
+    this.state.selectedImageBase64 = downscaledBase64;
+
+    const previewImg = document.getElementById('photoPreviewImg');
+    previewImg.src = downscaledBase64;
+    document.getElementById('photoPlaceholderState').classList.add('hidden');
+    document.getElementById('photoPreviewContainer').classList.remove('hidden');
+
+    this.analyzeProcessedPhoto(downscaledBase64);
+  }
+
+  async downscaleImageFile(file, maxDimension = 1200) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.getElementById('offscreenCanvas') || document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async analyzeProcessedPhoto(imageBase64) {
+    const apiKey = this.state.settings.geminiApiKey;
+    const mode = this.state.currentScanMode;
+    const portionHint = document.getElementById('foodPortionHintInput').value.trim();
+
+    // 1. If Gemini API key is configured OR scan mode is 'food' (Plate analysis)
+    if (apiKey) {
+      this.showScanningIndicator(
+        mode === 'food' ? 'Gemini AI Vision: Estimating meal plate & portions...' : 'Gemini AI Vision: Reading Nutrition Facts Table...',
+        'Calculating exact calories, protein, carbs and fat...'
+      );
+
+      try {
+        const result = await this.callGeminiVision(imageBase64, apiKey, mode, portionHint);
+        this.populateDetectedResults({ ...result, photo: imageBase64 });
+        this.hideScanningIndicator();
+        return;
+      } catch (err) {
+        console.warn('Gemini vision API error:', err);
+      }
+    }
+
+    // 2. Client-side OCR fallback (Tesseract.js with pre-processed canvas)
+    this.showScanningIndicator('Scanning Nutrition Table with local OCR...', 'Extracting calories and macro text...');
+    try {
+      if (window.Tesseract) {
+        const ocrResult = await Tesseract.recognize(imageBase64, 'eng');
+        const text = ocrResult.data.text;
+        const parsed = this.parseNutritionLabelText(text);
+        this.populateDetectedResults({ ...parsed, photo: imageBase64 });
+      } else {
+        this.populateDetectedResults({
+          name: 'Scanned Food Item',
+          portion: '1 serving',
+          calories: 250,
+          protein: 20,
+          carbs: 25,
+          fat: 8,
+          photo: imageBase64
+        });
+      }
+    } catch (err) {
+      this.populateDetectedResults({
+        name: 'Scanned Food',
+        portion: '1 serving',
+        calories: 300,
+        protein: 25,
+        carbs: 30,
+        fat: 10,
+        photo: imageBase64
+      });
+    } finally {
+      this.hideScanningIndicator();
+    }
+  }
+
+  async callGeminiVision(base64DataUrl, apiKey, mode, portionHint) {
+    const mimeMatch = base64DataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const base64Data = mimeMatch ? mimeMatch[2] : base64DataUrl;
+
+    let promptText = '';
+    if (mode === 'food') {
+      promptText = `
+        You are an expert sports nutrition analysis assistant.
+        Examine this image of a plate/dish of food.
+        User's portion hint or description: "${portionHint || 'No hint provided - judge portion visually from plate size'}".
+        
+        If a portion hint was provided, calculate the exact macros for that portion.
+        If no portion hint was provided, estimate the portion visually from the plate/container scale.
+        
+        Respond ONLY with a valid JSON object in this exact schema with NO markdown formatting:
+        {
+          "name": "Food Dish Name",
+          "portion": "e.g. 150g cooked chicken breast with 1 cup rice",
+          "calories": 420,
+          "protein": 35.0,
+          "carbs": 45.0,
+          "fat": 8.0
+        }
+      `;
+    } else {
+      promptText = `
+        You are an expert sports nutrition analysis assistant.
+        Examine this nutrition facts label image.
+        Extract the food/brand name, serving size description, calories, protein (g), total carbohydrate (g), and total fat (g).
+        
+        Respond ONLY with a valid JSON object in this exact schema with NO markdown formatting:
+        {
+          "name": "Product Name",
+          "portion": "e.g. 1 scoop (30g) or 1 bottle (240ml)",
+          "calories": 250,
+          "protein": 25.0,
+          "carbs": 20.0,
+          "fat": 8.0
+        }
+      `;
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            { text: promptText },
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data
+              }
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.1,
+        response_mime_type: 'application/json'
+      }
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const json = await response.json();
+    const candidate = json.candidates && json.candidates[0];
+    const textOut = candidate?.content?.parts?.[0]?.text;
+    if (!textOut) throw new Error('Empty response from Gemini');
+
+    return JSON.parse(textOut);
+  }
+
+  parseNutritionLabelText(rawText) {
+    const text = rawText.replace(/\r/g, ' ');
+
+    let calories = null;
+    let protein = null;
+    let carbs = null;
+    let fat = null;
+
+    const calMatch = text.match(/calories\s*[:=]?\s*(\d{1,4})/i) || text.match(/energy\D*(\d{2,4})\s*kcal/i);
+    if (calMatch) calories = parseFloat(calMatch[1]);
+
+    const protMatch = text.match(/protein\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g?/i);
+    if (protMatch) protein = parseFloat(protMatch[1]);
+
+    const carbMatch = text.match(/(?:total\s+)?carb(?:ohydrate)?s?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g?/i);
+    if (carbMatch) carbs = parseFloat(carbMatch[1]);
+
+    const fatMatch = text.match(/(?:total\s+)?fat\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g?/i);
+    if (fatMatch) fat = parseFloat(fatMatch[1]);
+
+    return {
+      name: 'Scanned Nutrition Label',
+      portion: '1 serving',
+      calories: calories !== null ? calories : 200,
+      protein: protein !== null ? protein : 20,
+      carbs: carbs !== null ? carbs : 20,
+      fat: fat !== null ? fat : 5
+    };
+  }
+
+  showScanningIndicator(msg, subMsg) {
+    const el = document.getElementById('scanningProgressIndicator');
+    el.classList.remove('hidden');
+    document.getElementById('scanStatusMessage').textContent = msg;
+    document.getElementById('scanSubStatusMessage').textContent = subMsg;
+    document.getElementById('detectedResultsContainer').classList.add('hidden');
+  }
+
+  hideScanningIndicator() {
+    document.getElementById('scanningProgressIndicator').classList.add('hidden');
+  }
+
+  populateDetectedResults(data) {
+    document.getElementById('detectedName').value = data.name || 'Scanned Item';
+    document.getElementById('detectedPortion').value = data.portion || '1 serving';
+    document.getElementById('detectedMultiplier').value = '1.0';
+    document.getElementById('detectedCalories').value = data.calories || 0;
+    document.getElementById('detectedProtein').value = data.protein || 0;
+    document.getElementById('detectedCarbs').value = data.carbs || 0;
+    document.getElementById('detectedFat').value = data.fat || 0;
+
+    const thumb = document.getElementById('detectedImgThumb');
+    if (data.photo) {
+      thumb.src = data.photo;
+      thumb.classList.remove('hidden');
+      this.state.selectedImageBase64 = data.photo;
+    } else {
+      thumb.classList.add('hidden');
+    }
+
+    document.getElementById('detectedResultsContainer').classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  saveDetectedFoodToDiary() {
+    const name = document.getElementById('detectedName').value.trim() || 'Scanned Food';
+    const basePortion = document.getElementById('detectedPortion').value.trim() || '1 serving';
+    const mult = parseFloat(document.getElementById('detectedMultiplier').value) || 1.0;
+    const baseCal = parseFloat(document.getElementById('detectedCalories').value) || 0;
+    const baseProt = parseFloat(document.getElementById('detectedProtein').value) || 0;
+    const baseCarb = parseFloat(document.getElementById('detectedCarbs').value) || 0;
+    const baseFat = parseFloat(document.getElementById('detectedFat').value) || 0;
+    const meal = document.getElementById('detectedMealCategory').value;
+    const saveToLib = document.getElementById('saveDetectedToLibraryCheck').checked;
+    const photo = this.state.selectedImageBase64 || null;
+
+    const scaledCal = Math.round(baseCal * mult);
+    const scaledProt = Math.round(baseProt * mult * 10) / 10;
+    const scaledCarb = Math.round(baseCarb * mult * 10) / 10;
+    const scaledFat = Math.round(baseFat * mult * 10) / 10;
+
+    const entry = {
+      id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      date: this.state.currentDate,
+      name,
+      meal,
+      portion: mult === 1.0 ? basePortion : `${mult}x (${basePortion})`,
+      calories: scaledCal,
+      protein: scaledProt,
+      carbs: scaledCarb,
+      fat: scaledFat,
+      photo
+    };
+
+    this.state.entries.push(entry);
+    this.saveEntries();
+
+    if (saveToLib) {
+      this.state.library.push({
+        id: 'lib_saved_' + Date.now(),
+        name,
+        basePortion,
+        baseCalories: baseCal,
+        baseProtein: baseProt,
+        baseCarbs: baseCarb,
+        baseFat: baseFat,
+        photo,
+        isCustom: true
+      });
+      this.saveLibrary();
+      this.renderLibraryUI();
+      this.populateLibraryDropdown();
+    }
+
+    this.renderDayLog();
+    this.updateDailyScorecard();
+    this.closeScanModal();
+    this.showToast(`Saved "${name}" with photo & portion!`);
+  }
+
+  // ================= ROUTINE PLANS (OPTION A VS B) =================
+  togglePlanView(letter) {
+    const aBtn = document.getElementById('viewOptionABtn');
+    const bBtn = document.getElementById('viewOptionBBtn');
+    const aDet = document.getElementById('optionADetails');
+    const bDet = document.getElementById('optionBDetails');
+
+    if (letter === 'A') {
+      aBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition-all shadow';
+      bBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all';
+      aDet.classList.remove('hidden');
+      bDet.classList.add('hidden');
+    } else {
+      bBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition-all shadow';
+      aBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all';
+      bDet.classList.remove('hidden');
+      aDet.classList.add('hidden');
+    }
+  }
+
+  applyOptionTemplate(letter) {
+    if (letter === 'A') {
       const items = [
         {
           name: 'Giant Morning Shake (2 scoops Nutricost + 500ml Fairlife Whole)',
@@ -758,9 +1577,8 @@ class NourishApp {
       this.renderDayLog();
       this.updateDailyScorecard();
       this.switchTab('tabDiary');
-      this.showToast('Applied Option A (Fast Morning Shake) routine to today!');
+      this.showToast('Applied Option A template to today!');
     } else {
-      // Option B: Split Shakes (AM & PM)
       const items = [
         {
           name: 'Split Shake 1 (AM: 1 scoop Nutricost + 250ml Fairlife Whole)',
@@ -820,344 +1638,17 @@ class NourishApp {
       this.renderDayLog();
       this.updateDailyScorecard();
       this.switchTab('tabDiary');
-      this.showToast('Applied Option B (Even Muscle Distribution) routine to today!');
+      this.showToast('Applied Option B template to today!');
     }
   }
 
-  // ================= MANUAL FOOD ENTRY =================
-  openAddFoodModal(defaultMeal = 'lunch') {
-    document.getElementById('foodEntryForm').reset();
-    document.getElementById('editFoodId').value = '';
-    document.getElementById('foodMealSelect').value = defaultMeal;
-    document.getElementById('addFoodModalTitle').innerHTML = `
-      <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-400"></i> Log Food Item
-    `;
-    document.getElementById('addFoodModal').classList.remove('hidden');
-    if (window.lucide) window.lucide.createIcons();
-  }
-
-  closeAddFoodModal() {
-    document.getElementById('addFoodModal').classList.add('hidden');
-  }
-
-  handleFoodFormSubmit(e) {
-    e.preventDefault();
-    const editId = document.getElementById('editFoodId').value;
-    const name = document.getElementById('foodNameInput').value.trim();
-    const meal = document.getElementById('foodMealSelect').value;
-    const portion = document.getElementById('foodPortionInput').value.trim();
-    const calories = parseFloat(document.getElementById('foodCaloriesInput').value) || 0;
-    const protein = parseFloat(document.getElementById('foodProteinInput').value) || 0;
-    const carbs = parseFloat(document.getElementById('foodCarbsInput').value) || 0;
-    const fat = parseFloat(document.getElementById('foodFatInput').value) || 0;
-
-    if (editId) {
-      const idx = this.state.entries.findIndex((i) => i.id === editId);
-      if (idx !== -1) {
-        this.state.entries[idx] = {
-          ...this.state.entries[idx],
-          name,
-          meal,
-          portion,
-          calories,
-          protein,
-          carbs,
-          fat
-        };
-      }
-    } else {
-      this.state.entries.push({
-        id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        date: this.state.currentDate,
-        name,
-        meal,
-        portion,
-        calories,
-        protein,
-        carbs,
-        fat,
-        photo: null
-      });
-    }
-
-    this.saveEntries();
-    this.renderDayLog();
-    this.updateDailyScorecard();
-    this.closeAddFoodModal();
-    this.showToast(`Logged "${name}"!`);
-  }
-
-  deleteEntry(id) {
-    this.state.entries = this.state.entries.filter((i) => i.id !== id);
-    this.saveEntries();
-    this.renderDayLog();
-    this.updateDailyScorecard();
-    this.showToast('Item deleted');
-  }
-
-  // ================= PRESETS MODAL =================
-  openPresetsModal() {
-    document.getElementById('presetsModal').classList.remove('hidden');
-  }
-
-  closePresetsModal() {
-    document.getElementById('presetsModal').classList.add('hidden');
-  }
-
-  // ================= PHOTO & LABEL SCANNER =================
-  openScanModal() {
-    document.getElementById('scanPhotoModal').classList.remove('hidden');
-    this.resetPhotoScanner();
-  }
-
-  closeScanModal() {
-    document.getElementById('scanPhotoModal').classList.add('hidden');
-  }
-
-  setScanMode(mode) {
-    this.state.currentScanMode = mode;
-    const labelBtn = document.getElementById('scanModeLabel');
-    const foodBtn = document.getElementById('scanModeFood');
-
-    if (mode === 'label') {
-      labelBtn.className = 'py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow';
-      foodBtn.className = 'py-2 rounded-lg font-semibold text-slate-300 hover:text-white';
-    } else {
-      foodBtn.className = 'py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow';
-      labelBtn.className = 'py-2 rounded-lg font-semibold text-slate-300 hover:text-white';
-    }
-  }
-
-  resetPhotoScanner() {
-    document.getElementById('cameraPhotoInput').value = '';
-    document.getElementById('photoPlaceholderState').classList.remove('hidden');
-    document.getElementById('photoPreviewContainer').classList.add('hidden');
-    document.getElementById('scanningProgressIndicator').classList.add('hidden');
-    document.getElementById('detectedResultsContainer').classList.add('hidden');
-    this.state.selectedImageBase64 = null;
-  }
-
-  handlePhotoSelected(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Data = e.target.result;
-      this.state.selectedImageBase64 = base64Data;
-
-      // Show preview
-      const previewImg = document.getElementById('photoPreviewImg');
-      previewImg.src = base64Data;
-      document.getElementById('photoPlaceholderState').classList.add('hidden');
-      document.getElementById('photoPreviewContainer').classList.remove('hidden');
-
-      // Process image
-      this.analyzePhoto(base64Data);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async analyzePhoto(imageBase64) {
-    const progressEl = document.getElementById('scanningProgressIndicator');
-    const statusMsg = document.getElementById('scanStatusMessage');
-    const resultsContainer = document.getElementById('detectedResultsContainer');
-
-    progressEl.classList.remove('hidden');
-    resultsContainer.classList.add('hidden');
-
-    const apiKey = this.state.settings.geminiApiKey;
-
-    // PATH 1: If Gemini API key is configured OR scan mode is 'food', use Gemini Multimodal
-    if (apiKey) {
-      statusMsg.textContent = 'Calling Gemini Vision AI to inspect food & portion...';
-      try {
-        const result = await this.callGeminiVision(imageBase64, apiKey, this.state.currentScanMode);
-        this.populateDetectedResults(result);
-        progressEl.classList.add('hidden');
-        resultsContainer.classList.remove('hidden');
-        return;
-      } catch (err) {
-        console.warn('Gemini vision failed, attempting client-side OCR fallback:', err);
-        statusMsg.textContent = 'Gemini error; switching to built-in nutrition label OCR...';
-      }
-    }
-
-    // PATH 2: Client-side OCR with Tesseract.js (Nutrition facts label scanner)
-    statusMsg.textContent = 'Scanning nutrition facts table with built-in OCR...';
-    try {
-      if (window.Tesseract) {
-        const ocrResult = await Tesseract.recognize(imageBase64, 'eng');
-        const text = ocrResult.data.text;
-        const parsed = this.parseNutritionLabelText(text);
-        this.populateDetectedResults(parsed);
-      } else {
-        // Fallback default
-        this.populateDetectedResults({
-          name: 'Nutrition Label Item',
-          calories: 250,
-          protein: 20,
-          carbs: 25,
-          fat: 8
-        });
-      }
-    } catch (ocrErr) {
-      console.error('OCR Error:', ocrErr);
-      this.populateDetectedResults({
-        name: 'Logged Meal',
-        calories: 300,
-        protein: 25,
-        carbs: 30,
-        fat: 10
-      });
-    } finally {
-      progressEl.classList.add('hidden');
-      resultsContainer.classList.remove('hidden');
-    }
-  }
-
-  async callGeminiVision(base64DataUrl, apiKey, mode) {
-    // Extract base64 without prefix
-    const mimeMatch = base64DataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-    const base64Data = mimeMatch ? mimeMatch[2] : base64DataUrl;
-
-    const promptText = `
-      You are an expert sports nutrition analysis assistant.
-      Examine this image.
-      If it is a nutrition facts label: extract the item name, calories, protein (g), total carbohydrate (g), and total fat (g).
-      If it is a prepared plate of food: identify the dish, estimate the portion size, and estimate total calories, protein in grams, carbohydrates in grams, and fat in grams.
-      
-      Respond ONLY with a valid JSON object in this exact schema, with no markdown code fences:
-      {
-        "name": "Food or Brand Name",
-        "portion": "Estimated portion or serving size",
-        "calories": 250,
-        "protein": 25,
-        "carbs": 20,
-        "fat": 8
-      }
-    `;
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-    const payload = {
-      contents: [
-        {
-          parts: [
-            { text: promptText },
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Data
-              }
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        response_mime_type: 'application/json'
-      }
-    };
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Gemini API HTTP ${response.status}: ${await response.text()}`);
-    }
-
-    const json = await response.json();
-    const candidate = json.candidates && json.candidates[0];
-    const textOut = candidate?.content?.parts?.[0]?.text;
-    if (!textOut) throw new Error('Empty response from Gemini');
-
-    return JSON.parse(textOut);
-  }
-
-  parseNutritionLabelText(rawText) {
-    const text = rawText.replace(/\r/g, ' ');
-
-    let calories = null;
-    let protein = null;
-    let carbs = null;
-    let fat = null;
-
-    // Calories Regex
-    const calMatch = text.match(/calories\s*[:=]?\s*(\d{1,4})/i) || text.match(/energy\D*(\d{2,4})\s*kcal/i);
-    if (calMatch) calories = parseFloat(calMatch[1]);
-
-    // Protein Regex
-    const protMatch = text.match(/protein\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g?/i);
-    if (protMatch) protein = parseFloat(protMatch[1]);
-
-    // Carbohydrate Regex
-    const carbMatch = text.match(/(?:total\s+)?carb(?:ohydrate)?s?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g?/i);
-    if (carbMatch) carbs = parseFloat(carbMatch[1]);
-
-    // Total Fat Regex
-    const fatMatch = text.match(/(?:total\s+)?fat\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g?/i);
-    if (fatMatch) fat = parseFloat(fatMatch[1]);
-
-    // Defaults if missing
-    return {
-      name: 'Scanned Label Item',
-      portion: '1 serving',
-      calories: calories !== null ? calories : 200,
-      protein: protein !== null ? protein : 15,
-      carbs: carbs !== null ? carbs : 20,
-      fat: fat !== null ? fat : 5
-    };
-  }
-
-  populateDetectedResults(data) {
-    document.getElementById('detectedName').value = data.name || 'Scanned Food';
-    document.getElementById('detectedCalories').value = data.calories || 0;
-    document.getElementById('detectedProtein').value = data.protein || 0;
-    document.getElementById('detectedCarbs').value = data.carbs || 0;
-    document.getElementById('detectedFat').value = data.fat || 0;
-  }
-
-  saveDetectedFoodToDiary() {
-    const name = document.getElementById('detectedName').value.trim() || 'Scanned Item';
-    const calories = parseFloat(document.getElementById('detectedCalories').value) || 0;
-    const protein = parseFloat(document.getElementById('detectedProtein').value) || 0;
-    const carbs = parseFloat(document.getElementById('detectedCarbs').value) || 0;
-    const fat = parseFloat(document.getElementById('detectedFat').value) || 0;
-    const meal = document.getElementById('detectedMealCategory').value;
-
-    const newEntry = {
-      id: 'entry_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-      date: this.state.currentDate,
-      name,
-      meal,
-      portion: 'Photo scan',
-      calories,
-      protein,
-      carbs,
-      fat,
-      photo: this.state.selectedImageBase64
-    };
-
-    this.state.entries.push(newEntry);
-    this.saveEntries();
-    this.renderDayLog();
-    this.updateDailyScorecard();
-    this.closeScanModal();
-    this.showToast(`Saved "${name}" with photo!`);
-  }
-
-  // ================= BODY METRICS & WAIST TRACKING =================
+  // ================= BODY METRICS & CHARTS =================
   saveBodyMetricToday() {
     const weightVal = parseFloat(document.getElementById('inputBodyWeight').value);
     const waistVal = parseFloat(document.getElementById('inputWaistSize').value);
 
     if (isNaN(weightVal) && isNaN(waistVal)) {
-      alert('Please enter at least body weight or waist measurement.');
+      alert('Please enter body weight or waist measurement.');
       return;
     }
 
@@ -1176,22 +1667,17 @@ class NourishApp {
       this.state.bodyMetrics.push(record);
     }
 
-    // Sort by date
     this.state.bodyMetrics.sort((a, b) => new Date(a.date) - new Date(b.date));
     this.saveBodyMetrics();
     this.renderCharts();
     this.showToast('Body metrics saved for ' + todayStr);
   }
 
-  // ================= CHARTS (CHART.JS) =================
   renderCharts() {
     if (!window.Chart) return;
 
-    // 1. Weekly Calorie & Protein Chart
     const past7Days = [];
-    for (let i = 6; i >= 0; i--) {
-      past7Days.push(this.offsetDateString(-i));
-    }
+    for (let i = 6; i >= 0; i--) past7Days.push(this.offsetDateString(-i));
 
     const dayLabels = past7Days.map((dateStr) => {
       const [y, m, d] = dateStr.split('-').map(Number);
@@ -1199,13 +1685,11 @@ class NourishApp {
     });
 
     const caloriesData = past7Days.map((dateStr) => {
-      const dayEntries = this.state.entries.filter((i) => i.date === dateStr);
-      return dayEntries.reduce((sum, item) => sum + (Number(item.calories) || 0), 0);
+      return this.state.entries.filter((i) => i.date === dateStr).reduce((sum, item) => sum + (Number(item.calories) || 0), 0);
     });
 
     const proteinData = past7Days.map((dateStr) => {
-      const dayEntries = this.state.entries.filter((i) => i.date === dateStr);
-      return dayEntries.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
+      return this.state.entries.filter((i) => i.date === dateStr).reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
     });
 
     const ctxMacro = document.getElementById('weeklyMacroChart')?.getContext('2d');
@@ -1243,9 +1727,7 @@ class NourishApp {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: {
-              labels: { color: '#94a3b8', font: { size: 11 } }
-            }
+            legend: { labels: { color: '#94a3b8', font: { size: 11 } } }
           },
           scales: {
             x: {
@@ -1273,7 +1755,6 @@ class NourishApp {
       });
     }
 
-    // 2. Waist Trend Chart
     const ctxWaist = document.getElementById('waistTrendChart')?.getContext('2d');
     if (ctxWaist && this.state.bodyMetrics.length > 0) {
       if (this.state.waistChart) this.state.waistChart.destroy();
@@ -1348,10 +1829,11 @@ class NourishApp {
   exportBackupData() {
     const backupObj = {
       app: 'Nourish',
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       settings: this.state.settings,
       entries: this.state.entries,
+      library: this.state.library,
       bodyMetrics: this.state.bodyMetrics
     };
 
@@ -1379,6 +1861,10 @@ class NourishApp {
           this.state.entries = parsed.entries;
           this.saveEntries();
         }
+        if (parsed.library && Array.isArray(parsed.library)) {
+          this.state.library = parsed.library;
+          this.saveLibrary();
+        }
         if (parsed.settings) {
           this.state.settings = { ...this.state.settings, ...parsed.settings };
           this.saveSettings();
@@ -1388,6 +1874,8 @@ class NourishApp {
           this.saveBodyMetrics();
         }
         this.renderTargetsInUI();
+        this.renderLibraryUI();
+        this.populateLibraryDropdown();
         this.renderDayLog();
         this.updateDailyScorecard();
         this.showToast('Backup restored successfully!');
@@ -1400,7 +1888,6 @@ class NourishApp {
 
   loadSampleDay() {
     const today = this.state.currentDate;
-    // Add default Option A day sample so the user immediately sees their exact routine
     this.state.entries = this.state.entries.filter((i) => i.date !== today);
 
     const sampleItems = [
@@ -1447,16 +1934,15 @@ class NourishApp {
   }
 
   clearAllData() {
-    if (confirm('Are you sure you want to clear all your diary logs? This cannot be undone unless you have a backup.')) {
+    if (confirm('Are you sure you want to clear all your diary logs?')) {
       this.state.entries = [];
       this.saveEntries();
       this.renderDayLog();
       this.updateDailyScorecard();
-      this.showToast('All log entries cleared.');
+      this.showToast('All diary entries cleared.');
     }
   }
 
-  // ================= TOAST NOTIFICATION =================
   showToast(message) {
     const existing = document.getElementById('nourishToast');
     if (existing) existing.remove();
@@ -1478,7 +1964,6 @@ class NourishApp {
   }
 }
 
-// Instantiate on load
 let app;
 window.addEventListener('DOMContentLoaded', () => {
   app = new NourishApp();

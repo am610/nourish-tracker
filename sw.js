@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nourish-v1';
+const CACHE_NAME = 'nourish-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

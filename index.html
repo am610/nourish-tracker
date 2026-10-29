@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Nourish" />
   <link rel="manifest" href="manifest.json" />
-  <title>Nourish — Body Recomposition Macro Tracker</title>
+  <title>Nourish — Body Recomposition Nutrition Tracker</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -39,6 +39,9 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- ZXing Barcode Scanner Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+
   <!-- Tesseract.js (Client-side OCR for nutrition labels) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
@@ -66,7 +69,7 @@
       <div class="flex items-center gap-1.5">
         <button id="headerScanBtn" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20">
           <i data-lucide="camera" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Photo Scan</span>
+          <span>Scan / Barcode</span>
         </button>
         <button id="openSettingsBtn" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors" title="Settings">
           <i data-lucide="settings" class="w-5 h-5"></i>
@@ -203,21 +206,24 @@
 
     <!-- Navigation Tabs -->
     <div class="flex items-center border-b border-white/10 gap-1 text-sm overflow-x-auto pb-1 scrollbar-none">
-      <button class="nav-tab active px-4 py-2 font-medium border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabDiary">
-        <i data-lucide="utensils" class="w-4 h-4"></i> Today's Diary
+      <button class="nav-tab active px-3.5 py-2 font-medium border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabDiary">
+        <i data-lucide="utensils" class="w-4 h-4"></i> Diary
       </button>
-      <button class="nav-tab px-4 py-2 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabRoutine">
-        <i data-lucide="calendar-check" class="w-4 h-4"></i> My Recomp Plan
+      <button class="nav-tab px-3.5 py-2 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabLibrary">
+        <i data-lucide="bookmark" class="w-4 h-4"></i> My Food Library
       </button>
-      <button class="nav-tab px-4 py-2 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabAnalytics">
+      <button class="nav-tab px-3.5 py-2 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabRoutine">
+        <i data-lucide="calendar-check" class="w-4 h-4"></i> Recomp Plan
+      </button>
+      <button class="nav-tab px-3.5 py-2 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabAnalytics">
         <i data-lucide="line-chart" class="w-4 h-4"></i> Trends & Waist
       </button>
-      <button class="nav-tab px-4 py-2 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabSettings">
-        <i data-lucide="sliders" class="w-4 h-4"></i> Settings & Backup
+      <button class="nav-tab px-3.5 py-2 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap" data-tab="tabSettings">
+        <i data-lucide="sliders" class="w-4 h-4"></i> Settings
       </button>
     </div>
 
-    <!-- TAB 1: TODAY'S DIARY -->
+    <!-- ================= TAB 1: TODAY'S DIARY ================= -->
     <div id="tabDiary" class="tab-content space-y-4">
       
       <!-- Quick Action Buttons Banner -->
@@ -228,27 +234,27 @@
           </div>
           <div>
             <div class="text-xs font-semibold text-white">Add Food</div>
-            <div class="text-[10px] text-slate-400">Manual Entry</div>
+            <div class="text-[10px] text-slate-400">Library / Portion</div>
           </div>
         </button>
 
         <button id="openScanModalBtn" class="glass-panel p-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 group">
           <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <i data-lucide="camera" class="w-5 h-5"></i>
+            <i data-lucide="scan" class="w-5 h-5"></i>
           </div>
           <div>
-            <div class="text-xs font-semibold text-white">Scan Photo</div>
-            <div class="text-[10px] text-slate-400">AI / Label OCR</div>
+            <div class="text-xs font-semibold text-white">Scan Barcode / AI</div>
+            <div class="text-[10px] text-slate-400">Internet / Labels</div>
           </div>
         </button>
 
-        <button id="openPresetsModalBtn" class="glass-panel p-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 group">
+        <button id="openLibraryBtn" class="glass-panel p-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 group">
           <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <i data-lucide="zap" class="w-5 h-5"></i>
+            <i data-lucide="bookmark" class="w-5 h-5"></i>
           </div>
           <div>
-            <div class="text-xs font-semibold text-white">Your Staples</div>
-            <div class="text-[10px] text-slate-400">Fairlife, Whey, Dal...</div>
+            <div class="text-xs font-semibold text-white">Saved Foods</div>
+            <div class="text-[10px] text-slate-400">Your Staples & Photos</div>
           </div>
         </button>
 
@@ -263,13 +269,43 @@
         </button>
       </div>
 
-      <!-- Meal Sections -->
+      <!-- Meal Sections (Breakfast, Lunch, Snack, Dinner, General / Uncategorized) -->
       <div class="space-y-3" id="mealsContainer">
-        <!-- Rendered dynamically by app.js: Breakfast, Lunch, Snacks, Dinner -->
+        <!-- Rendered dynamically by app.js -->
       </div>
     </div>
 
-    <!-- TAB 2: MY RECOMP PLAN & EATING CHART -->
+    <!-- ================= TAB 2: MY FOOD LIBRARY & STAPLES ================= -->
+    <div id="tabLibrary" class="tab-content hidden space-y-4">
+      <div class="glass-panel p-4 sm:p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="bookmark" class="w-5 h-5 text-emerald-400"></i> My Food Library & Staples
+            </h2>
+            <p class="text-xs text-slate-400">
+              Saved foods with photos, portion weights, and macros. Easily adjust portions when logging!
+            </p>
+          </div>
+          <button id="addNewLibraryFoodBtn" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Food to Library
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+          <input type="text" id="librarySearchInput" placeholder="Search your library (e.g. Fairlife, Rice, Dal, Chicken)..." class="w-full pl-9 pr-3 py-2 rounded-xl text-xs" />
+        </div>
+
+        <!-- Library Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="libraryCardsContainer">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TAB 3: RECOMP PLAN & ROUTINE ================= -->
     <div id="tabRoutine" class="tab-content hidden space-y-4">
       
       <!-- Option A vs Option B Interactive Comparison Card -->
@@ -295,14 +331,14 @@
           </button>
         </div>
 
-        <!-- Details for Active Option -->
+        <!-- Details for Option A -->
         <div id="optionADetails" class="mt-4 space-y-3">
           <div class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs leading-relaxed text-slate-300">
-            <strong class="text-blue-300 font-semibold">How Option A Works:</strong> You take 2 full scoops of Nutricost Whey + 500ml Fairlife Milk in the morning (570 kcal, 87g protein) and head straight to work until lunch.
+            <strong class="text-blue-300 font-semibold">How Option A Works:</strong> 2 scoops Nutricost Whey + 500ml Fairlife Milk in the morning (570 kcal, 87g protein) and straight to lunch.
             <div class="mt-2 text-slate-400 text-[11px]">
               ✓ Ultra-fast morning routine & no breakfast cooking.<br/>
               ✓ Secures 58% of daily protein before 9 AM.<br/>
-              • Calorie tip: Switch to Fat-Free Fairlife to cut ~150 calories without losing any protein!
+              • Calorie tip: Switch to Fat-Free Fairlife to cut ~150 calories without losing protein!
             </div>
           </div>
 
@@ -332,7 +368,7 @@
                 </div>
               </div>
               <div class="text-right">
-                <span class="font-bold text-emerald-400">~35–40g Protein</span>
+                <span class="font-bold text-emerald-400">~38g Protein</span>
                 <div class="text-[10px] text-slate-400">~550 kcal</div>
               </div>
             </div>
@@ -346,14 +382,14 @@
                 </div>
               </div>
               <div class="text-right">
-                <span class="font-bold text-emerald-400">~25–30g Protein</span>
+                <span class="font-bold text-emerald-400">~27g Protein</span>
                 <div class="text-[10px] text-slate-400">~550 kcal</div>
               </div>
             </div>
 
             <div class="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
               <span class="font-bold text-white">Daily Total Intake</span>
-              <span class="font-bold text-emerald-400">~150g Protein · ~1,900–2,000 kcal</span>
+              <span class="font-bold text-emerald-400">~152g Protein · ~1,900–2,000 kcal</span>
             </div>
           </div>
 
@@ -362,6 +398,7 @@
           </button>
         </div>
 
+        <!-- Details for Option B -->
         <div id="optionBDetails" class="mt-4 space-y-3 hidden">
           <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs leading-relaxed text-slate-300">
             <strong class="text-emerald-300 font-semibold">How Option B Works (Even Protein Distribution):</strong>
@@ -452,42 +489,9 @@
           </button>
         </div>
       </div>
-
-      <!-- Nutrition Principles for 75kg Recomposition -->
-      <div class="glass-panel p-4 space-y-3">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <i data-lucide="info" class="w-4 h-4 text-emerald-400"></i> Body Recomposition Core Rules
-        </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300">
-          <div class="p-3 rounded-xl bg-white/5 space-y-1">
-            <div class="font-semibold text-emerald-400">1. Calorie Deficit vs Maintenance</div>
-            <p class="text-slate-400 text-[11px]">
-              At 2,000 kcal, you are in a slight deficit that gently burns abdominal fat while providing enough energy for lifting heavy.
-            </p>
-          </div>
-          <div class="p-3 rounded-xl bg-white/5 space-y-1">
-            <div class="font-semibold text-amber-400">2. The 150g Protein Anchor</div>
-            <p class="text-slate-400 text-[11px]">
-              150g (2.0g per kg of bodyweight) guarantees your muscles don't catabolize while walking and training 3 days a week.
-            </p>
-          </div>
-          <div class="p-3 rounded-xl bg-white/5 space-y-1">
-            <div class="font-semibold text-purple-400">3. Waist Circumference > Scale</div>
-            <p class="text-slate-400 text-[11px]">
-              Scale weight may stay at 75 kg for weeks while your waist shrinks from 34" to 32". That means you gained muscle and lost belly fat!
-            </p>
-          </div>
-          <div class="p-3 rounded-xl bg-white/5 space-y-1">
-            <div class="font-semibold text-blue-400">4. Flexibility Over Perfection</div>
-            <p class="text-slate-400 text-[11px]">
-              If carbs are 180g one day and 220g another, don't stress. Total calories and 140–160g protein are 90% of your progress.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- TAB 3: TRENDS, WAIST & BODY RECOMP -->
+    <!-- ================= TAB 4: TRENDS & BODY RECOMP ================= -->
     <div id="tabAnalytics" class="tab-content hidden space-y-4">
       
       <!-- Body Metrics Entry Card (Waist & Weight) -->
@@ -537,7 +541,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: SETTINGS & BACKUP -->
+    <!-- ================= TAB 5: SETTINGS & BACKUP ================= -->
     <div id="tabSettings" class="tab-content hidden space-y-4">
       
       <!-- Nutrition Targets Configuration -->
@@ -576,7 +580,7 @@
               <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> AI Photo Recognition (Gemini API)
             </h3>
             <p class="text-xs text-slate-400 mt-1">
-              Connect a free Google Gemini API key to enable direct photo recognition of whole plates, restaurant meals, and automatic portion estimates.
+              Connect a free Google Gemini API key to enable direct photo recognition of food plates, nutrition facts tables, and automatic portion judgment.
             </p>
           </div>
         </div>
@@ -590,12 +594,12 @@
             </button>
           </div>
           <p class="text-[11px] text-slate-400">
-            Keys are saved locally in your browser's <code class="text-emerald-400">localStorage</code> and never sent to any third-party server.
+            Keys are stored locally in your browser's <code class="text-emerald-400">localStorage</code>.
             Get a free key in 30 seconds at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-400 underline">Google AI Studio</a>.
           </p>
           <div class="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
             <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
-            <span>Nutrition Facts labels can also be scanned without an API key using the built-in OCR reader!</span>
+            <span>Barcode scanning uses Open Food Facts online database with no key needed!</span>
           </div>
         </div>
       </div>
@@ -606,7 +610,7 @@
           <i data-lucide="database" class="w-4 h-4 text-blue-400"></i> Data Backup & Sync
         </h3>
         <p class="text-xs text-slate-400">
-          All your meals and weight records are saved in your browser. Export anytime to back up or move to another phone.
+          All your meals, library foods, and weight records are saved in your browser. Export anytime to back up or move to another phone.
         </p>
 
         <div class="flex flex-wrap gap-2 pt-1">
@@ -630,121 +634,278 @@
 
   <!-- ================= MODALS ================= -->
 
-  <!-- 1. MANUAL ADD / EDIT FOOD MODAL -->
-  <div id="addFoodModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
-    <div class="glass-panel bg-[#131a26] max-w-md w-full p-5 rounded-2xl border border-white/15 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+  <!-- 1. ENHANCED ADD FOOD MODAL (FROM LIBRARY OR CUSTOM WITH PORTION SCALING) -->
+  <div id="addFoodModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-panel bg-[#131a26] max-w-lg w-full p-5 rounded-2xl border border-white/15 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 id="addFoodModalTitle" class="text-base font-bold text-white flex items-center gap-2">
-          <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-400"></i> Log Food Item
+          <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-400"></i> Add Food to Diary
         </h3>
         <button id="closeAddFoodModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="foodEntryForm" class="space-y-3">
-        <input type="hidden" id="editFoodId" value="" />
+      <!-- Mode Selector: Choose from Library vs New Custom Food -->
+      <div class="flex gap-2 bg-white/5 p-1 rounded-xl text-xs">
+        <button id="addModeLibraryBtn" class="flex-1 py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow">
+          Choose from My Library
+        </button>
+        <button id="addModeCustomBtn" class="flex-1 py-2 rounded-lg font-semibold text-slate-300 hover:text-white">
+          + New Custom Food
+        </button>
+      </div>
+
+      <!-- SUB-VIEW 1: CHOOSE FROM MY LIBRARY -->
+      <div id="addFoodFromLibrarySection" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Select Food from Library</label>
+          <select id="libraryFoodSelect" class="w-full px-3 py-2 rounded-lg text-xs"></select>
+        </div>
+
+        <!-- Selected Food Preview Card -->
+        <div id="selectedLibraryPreviewCard" class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div id="selectedLibImgBox" class="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs overflow-hidden">
+              <i data-lucide="utensils" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div id="selectedLibName" class="text-xs font-bold text-white">Food Name</div>
+              <div id="selectedLibBasePortion" class="text-[10px] text-slate-400">100g base portion</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="selectedLibBaseKcal" class="text-xs font-bold text-white">165 kcal</div>
+            <div id="selectedLibBaseProt" class="text-[10px] text-emerald-400 font-semibold">31g Protein</div>
+          </div>
+        </div>
+
+        <!-- Portion Multiplier & Weight Adjustment -->
+        <div class="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-emerald-400 flex items-center gap-1">
+              <i data-lucide="scale" class="w-3.5 h-3.5"></i> How much portion did you eat?
+            </label>
+            <span id="calculatedPortionLabel" class="text-[11px] font-semibold text-slate-300">1.0x serving</span>
+          </div>
+
+          <!-- Quick Portion Pills -->
+          <div class="flex gap-1.5 flex-wrap">
+            <button type="button" class="portion-pill" data-mult="0.5">0.5x (Half)</button>
+            <button type="button" class="portion-pill active" data-mult="1.0">1.0x (Regular)</button>
+            <button type="button" class="portion-pill" data-mult="1.5">1.5x</button>
+            <button type="button" class="portion-pill" data-mult="2.0">2.0x (Double)</button>
+            <button type="button" class="portion-pill" data-mult="3.0">3.0x</button>
+          </div>
+
+          <div class="flex items-center gap-2 pt-1">
+            <label class="text-xs text-slate-400 whitespace-nowrap">Custom Multiplier:</label>
+            <input type="number" step="0.1" min="0.1" id="portionMultiplierInput" value="1.0" class="w-24 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white" />
+            <span class="text-xs text-slate-400">x serving</span>
+          </div>
+
+          <!-- Live Dynamically Recalculated Macros -->
+          <div class="pt-2 border-t border-white/10 flex justify-between text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400 block">Total Calories</span>
+              <span id="scaledCaloriesText" class="font-bold text-white">165 kcal</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-emerald-400 block">Protein</span>
+              <span id="scaledProteinText" class="font-bold text-emerald-400">31.0g</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-amber-400 block">Carbs</span>
+              <span id="scaledCarbsText" class="font-bold text-amber-400">0.0g</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-purple-400 block">Fat</span>
+              <span id="scaledFatText" class="font-bold text-purple-400">3.6g</span>
+            </div>
+          </div>
+        </div>
 
         <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Meal Category</label>
+          <select id="libraryMealSelect" class="w-full px-3 py-2 rounded-lg text-xs">
+            <option value="breakfast">🌅 Breakfast</option>
+            <option value="lunch">☀️ Lunch</option>
+            <option value="snack">🍎 Afternoon Snack</option>
+            <option value="dinner">🌙 Dinner</option>
+            <option value="general">🍽️ General Food / Anytime (No Category)</option>
+          </select>
+        </div>
+
+        <button type="button" id="confirmAddFromLibraryBtn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all shadow-lg shadow-emerald-600/20">
+          Add Food to Diary
+        </button>
+      </div>
+
+      <!-- SUB-VIEW 2: NEW CUSTOM FOOD FORM -->
+      <form id="customFoodEntryForm" class="space-y-3 hidden">
+        <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Food Name</label>
-          <input type="text" id="foodNameInput" required placeholder="e.g. Nutricost Whey + Fairlife Shake" class="w-full px-3 py-2 rounded-lg text-sm" />
+          <input type="text" id="customFoodNameInput" required placeholder="e.g. Nutricost Whey + Fairlife Milk" class="w-full px-3 py-2 rounded-lg text-xs" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Meal Category</label>
-            <select id="foodMealSelect" class="w-full px-3 py-2 rounded-lg text-sm">
-              <option value="breakfast">Breakfast</option>
-              <option value="lunch">Lunch</option>
-              <option value="snack">Afternoon Snack</option>
-              <option value="dinner">Dinner</option>
-            </select>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Serving / Portion Description</label>
+            <input type="text" id="customFoodPortionInput" placeholder="e.g. 500ml + 2 scoops" class="w-full px-3 py-2 rounded-lg text-xs" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Serving / Portion</label>
-            <input type="text" id="foodPortionInput" placeholder="e.g. 500ml + 2 scoops" class="w-full px-3 py-2 rounded-lg text-sm" />
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Portion Multiplier</label>
+            <input type="number" step="0.1" id="customFoodMultiplierInput" value="1.0" class="w-full px-3 py-2 rounded-lg text-xs" />
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1">Calories (kcal)</label>
-            <input type="number" id="foodCaloriesInput" required placeholder="570" class="w-full px-3 py-2 rounded-lg text-sm font-semibold" />
+            <input type="number" id="customFoodCaloriesInput" required placeholder="570" class="w-full px-3 py-2 rounded-lg text-xs font-semibold" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-emerald-400 mb-1">Protein (g)</label>
-            <input type="number" step="0.1" id="foodProteinInput" required placeholder="87" class="w-full px-3 py-2 rounded-lg text-sm font-semibold text-emerald-400" />
+            <input type="number" step="0.1" id="customFoodProteinInput" required placeholder="87" class="w-full px-3 py-2 rounded-lg text-xs font-semibold text-emerald-400" />
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-amber-400 mb-1">Carbohydrates (g)</label>
-            <input type="number" step="0.1" id="foodCarbsInput" placeholder="18" class="w-full px-3 py-2 rounded-lg text-sm" />
+            <input type="number" step="0.1" id="customFoodCarbsInput" placeholder="18" class="w-full px-3 py-2 rounded-lg text-xs" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-purple-400 mb-1">Fat (g)</label>
-            <input type="number" step="0.1" id="foodFatInput" placeholder="20" class="w-full px-3 py-2 rounded-lg text-sm" />
+            <input type="number" step="0.1" id="customFoodFatInput" placeholder="20" class="w-full px-3 py-2 rounded-lg text-xs" />
           </div>
         </div>
 
-        <div class="pt-3 flex gap-2">
-          <button type="button" id="cancelAddFoodBtn" class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-semibold">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Meal Category</label>
+          <select id="customFoodMealSelect" class="w-full px-3 py-2 rounded-lg text-xs">
+            <option value="breakfast">🌅 Breakfast</option>
+            <option value="lunch">☀️ Lunch</option>
+            <option value="snack">🍎 Afternoon Snack</option>
+            <option value="dinner">🌙 Dinner</option>
+            <option value="general">🍽️ General Food / Anytime (No Category)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2 p-2.5 rounded-lg bg-white/5 border border-white/10">
+          <input type="checkbox" id="saveCustomToLibraryCheck" checked class="rounded text-emerald-500 focus:ring-emerald-500 h-4 w-4" />
+          <label for="saveCustomToLibraryCheck" class="text-xs text-slate-200 cursor-pointer">
+            Save this item to <strong>My Food Library</strong> for future 1-tap logging
+          </label>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" id="cancelCustomFoodBtn" class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-semibold">
             Cancel
           </button>
           <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/20">
-            Save Food
+            Save to Diary
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- 2. PHOTO & LABEL SCANNER MODAL -->
-  <div id="scanPhotoModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
+  <!-- 2. PHOTO, BARCODE & AI SCANNER MODAL -->
+  <div id="scanPhotoModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
     <div class="glass-panel bg-[#131a26] max-w-lg w-full p-5 rounded-2xl border border-white/15 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <div>
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="camera" class="w-5 h-5 text-emerald-400"></i> Smart Food & Label Scanner
+            <i data-lucide="scan" class="w-5 h-5 text-emerald-400"></i> Smart Scanner & Internet Lookup
           </h3>
-          <p class="text-xs text-slate-400">Snap a plate of food or a nutrition facts label.</p>
+          <p class="text-xs text-slate-400">Barcodes, Nutrition Labels & AI Meal Recognition.</p>
         </div>
         <button id="closeScanModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <!-- Mode selection: Meal Plate or Nutrition Label -->
-      <div class="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-xl text-xs">
-        <button id="scanModeLabel" class="py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow">
-          Nutrition Facts Label
+      <!-- Mode Selection Tabs: Barcode vs Nutrition Label vs AI Plate -->
+      <div class="grid grid-cols-3 gap-1.5 bg-white/5 p-1 rounded-xl text-[11px]">
+        <button id="scanModeBarcodeBtn" class="py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow text-center">
+          📦 Barcode (Live)
         </button>
-        <button id="scanModeFood" class="py-2 rounded-lg font-semibold text-slate-300 hover:text-white">
-          Food Plate / Meal (AI)
+        <button id="scanModeLabelBtn" class="py-2 rounded-lg font-semibold text-slate-300 hover:text-white text-center">
+          🏷️ Nutrition Label
+        </button>
+        <button id="scanModeFoodBtn" class="py-2 rounded-lg font-semibold text-slate-300 hover:text-white text-center">
+          🍽️ AI Meal & Portion
         </button>
       </div>
 
-      <!-- Photo Upload & Capture Box -->
-      <div class="relative border-2 border-dashed border-white/20 rounded-2xl p-4 text-center hover:border-emerald-500/50 transition-colors bg-white/5">
-        <input type="file" id="cameraPhotoInput" accept="image/*" capture="environment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-        
-        <div id="photoPlaceholderState" class="space-y-2 py-4">
-          <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-            <i data-lucide="camera" class="w-6 h-6"></i>
+      <!-- VIEW A: LIVE BARCODE SCANNER & INTERNET SEARCH -->
+      <div id="barcodeScannerSection" class="space-y-3">
+        <!-- Live Camera Viewport -->
+        <div id="barcodeCameraBox" class="scanner-viewport hidden">
+          <video id="barcodeVideo" playsinline></video>
+          <div class="scanner-laser"></div>
+        </div>
+
+        <div class="flex gap-2">
+          <button type="button" id="startLiveBarcodeCamBtn" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow">
+            <i data-lucide="camera" class="w-4 h-4"></i> Start Camera Scan
+          </button>
+          <label class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-center">
+            <i data-lucide="image" class="w-4 h-4"></i> Photo of Barcode
+            <input type="file" id="barcodePhotoInput" accept="image/*" capture="environment" class="hidden" />
+          </label>
+        </div>
+
+        <!-- Manual barcode number search -->
+        <div class="pt-2 border-t border-white/5 space-y-1.5">
+          <label class="block text-[11px] font-semibold text-slate-400">Or enter barcode / product code directly:</label>
+          <div class="flex gap-2">
+            <input type="text" id="manualBarcodeInput" placeholder="e.g. 0049000006582" class="flex-1 px-3 py-2 rounded-lg text-xs" />
+            <button type="button" id="lookupBarcodeBtn" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="globe" class="w-3.5 h-3.5"></i> Search Web
+            </button>
           </div>
-          <div class="text-sm font-semibold text-white">Tap to take photo or choose image</div>
-          <p class="text-xs text-slate-400 max-w-xs mx-auto">
-            Take a clear picture of the nutrition table on the package or your plate.
+          <p class="text-[10px] text-slate-400">
+            Searches the free Open Food Facts global database with millions of foods in real-time.
+          </p>
+        </div>
+      </div>
+
+      <!-- VIEW B: NUTRITION LABEL & MEAL PHOTO UPLOAD -->
+      <div id="photoUploadSection" class="space-y-3 hidden">
+        <!-- Optional Food / Portion Hint for AI Meal Mode -->
+        <div id="foodHintBox" class="hidden space-y-1">
+          <label class="block text-xs font-semibold text-emerald-400">
+            Food / Portion Hint (Optional)
+          </label>
+          <input type="text" id="foodPortionHintInput" placeholder="e.g. '2 rotis and 1 bowl yellow dal' or '150g grilled chicken'" class="w-full px-3 py-2 rounded-lg text-xs" />
+          <p class="text-[10px] text-slate-400">
+            If you provide a portion, AI uses it to calculate exact macros. If left blank, AI judges the portion size visually from the plate!
           </p>
         </div>
 
-        <!-- Preview state -->
-        <div id="photoPreviewContainer" class="hidden space-y-2">
-          <img id="photoPreviewImg" class="max-h-56 mx-auto rounded-lg object-contain shadow-md" />
-          <button type="button" id="retakePhotoBtn" class="text-xs text-slate-300 hover:text-white underline">
-            Retake or choose another photo
-          </button>
+        <!-- Photo Upload Box -->
+        <div class="relative border-2 border-dashed border-white/20 rounded-2xl p-4 text-center hover:border-emerald-500/50 transition-colors bg-white/5">
+          <input type="file" id="cameraPhotoInput" accept="image/*" capture="environment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+          
+          <div id="photoPlaceholderState" class="space-y-2 py-3">
+            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <i data-lucide="camera" class="w-6 h-6"></i>
+            </div>
+            <div class="text-xs font-semibold text-white">Tap to take photo or upload image</div>
+            <p class="text-[11px] text-slate-400 max-w-xs mx-auto">
+              Snap a clear photo of the nutrition label table or your food plate.
+            </p>
+          </div>
+
+          <!-- Preview State -->
+          <div id="photoPreviewContainer" class="hidden space-y-2">
+            <img id="photoPreviewImg" class="max-h-52 mx-auto rounded-lg object-contain shadow-md" />
+            <button type="button" id="retakePhotoBtn" class="text-xs text-slate-300 hover:text-white underline">
+              Retake or choose another photo
+            </button>
+          </div>
         </div>
       </div>
 
@@ -752,21 +913,35 @@
       <div id="scanningProgressIndicator" class="hidden p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-500 border-t-transparent"></div>
         <div class="text-xs font-semibold text-emerald-300" id="scanStatusMessage">Analyzing photo...</div>
-        <p class="text-[11px] text-slate-400">Extracting calories, protein, carbs and fat.</p>
+        <p class="text-[11px] text-slate-400" id="scanSubStatusMessage">Extracting calories, protein, carbs and fat.</p>
       </div>
 
-      <!-- Detected Output Preview Form -->
+      <!-- Detected Output Preview & Confirmation Form -->
       <div id="detectedResultsContainer" class="hidden space-y-3 p-3.5 rounded-xl bg-white/5 border border-white/10">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">
-            <i data-lucide="check-circle-2" class="w-4 h-4"></i> Extracted Nutrition Information
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i> Nutrition Information Found
           </span>
-          <span class="text-[10px] text-slate-400">Review & Edit</span>
+          <span class="text-[10px] text-slate-400">Review & Adjust</span>
         </div>
 
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Item Name</label>
-          <input type="text" id="detectedName" class="w-full px-2.5 py-1.5 rounded-lg text-xs" />
+        <div class="flex items-center gap-3">
+          <img id="detectedImgThumb" class="w-12 h-12 rounded-lg object-cover bg-white/5 hidden border border-white/10" />
+          <div class="flex-1">
+            <label class="block text-[10px] font-semibold text-slate-300 mb-0.5">Product / Food Name</label>
+            <input type="text" id="detectedName" class="w-full px-2.5 py-1.5 rounded-lg text-xs" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-300 mb-0.5">Base Portion / Serving</label>
+            <input type="text" id="detectedPortion" placeholder="e.g. 1 bottle (240ml)" class="w-full px-2.5 py-1.5 rounded-lg text-xs" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-emerald-400 mb-0.5">Portion Multiplier</label>
+            <input type="number" step="0.1" id="detectedMultiplier" value="1.0" class="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-400" />
+          </div>
         </div>
 
         <div class="grid grid-cols-4 gap-2">
@@ -788,54 +963,27 @@
           </div>
         </div>
 
-        <div class="flex gap-2">
-          <select id="detectedMealCategory" class="px-3 py-2 rounded-lg text-xs flex-1">
-            <option value="breakfast">Breakfast</option>
-            <option value="lunch">Lunch</option>
-            <option value="snack">Afternoon Snack</option>
-            <option value="dinner">Dinner</option>
+        <div>
+          <label class="block text-[10px] font-medium text-slate-400 mb-0.5">Meal Category</label>
+          <select id="detectedMealCategory" class="w-full px-2.5 py-1.5 rounded-lg text-xs">
+            <option value="breakfast">🌅 Breakfast</option>
+            <option value="lunch">☀️ Lunch</option>
+            <option value="snack">🍎 Afternoon Snack</option>
+            <option value="dinner">🌙 Dinner</option>
+            <option value="general">🍽️ General Food / Anytime (No Category)</option>
           </select>
-          <button id="saveDetectedFoodBtn" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5">
-            <i data-lucide="plus" class="w-4 h-4"></i> Add to Diary
-          </button>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- 3. STAPLES & PRESETS MODAL -->
-  <div id="presetsModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
-    <div class="glass-panel bg-[#131a26] max-w-lg w-full p-5 rounded-2xl border border-white/15 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
-      <div class="flex items-center justify-between pb-3 border-b border-white/10">
-        <div>
-          <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="zap" class="w-5 h-5 text-amber-400"></i> Your Nutrition Staples
-          </h3>
-          <p class="text-xs text-slate-400">1-tap logging for your everyday recomposition foods.</p>
+        <div class="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+          <input type="checkbox" id="saveDetectedToLibraryCheck" checked class="rounded text-emerald-500 focus:ring-emerald-500 h-4 w-4" />
+          <label for="saveDetectedToLibraryCheck" class="text-xs text-slate-200 cursor-pointer">
+            Save this item with photo to <strong>My Food Library</strong>
+          </label>
         </div>
-        <button id="closePresetsModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-white">
-          <i data-lucide="x" class="w-5 h-5"></i>
+
+        <button id="saveDetectedFoodBtn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add to Today's Diary
         </button>
-      </div>
-
-      <!-- Categories in presets -->
-      <div class="space-y-4">
-        
-        <!-- Protein Shakes -->
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Nutricost Whey & Fairlife Milk</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="shakePresetsList">
-            <!-- Dynamically populated or static fast buttons -->
-          </div>
-        </div>
-
-        <!-- Whole Foods -->
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">Everyday Meals (Dal, Rice, Eggs, Chicken)</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="wholeFoodPresetsList">
-            <!-- Dynamically populated -->
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -846,6 +994,10 @@
       <button class="flex flex-col items-center gap-1 text-emerald-400 font-semibold" data-tab="tabDiary">
         <i data-lucide="utensils" class="w-5 h-5"></i>
         <span>Diary</span>
+      </button>
+      <button class="flex flex-col items-center gap-1 text-slate-400" data-tab="tabLibrary">
+        <i data-lucide="bookmark" class="w-5 h-5"></i>
+        <span>Library</span>
       </button>
       <button class="flex flex-col items-center gap-1 text-slate-400" data-tab="tabRoutine">
         <i data-lucide="calendar-check" class="w-5 h-5"></i>
@@ -861,6 +1013,9 @@
       </button>
     </div>
   </nav>
+
+  <!-- Offscreen canvas for fast image downscaling and pre-processing -->
+  <canvas id="offscreenCanvas" class="hidden"></canvas>
 
   <!-- App JavaScript -->
   <script src="app.js"></script>
